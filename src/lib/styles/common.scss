@@ -1,0 +1,101 @@
+body {
+    padding: 0;
+    margin: 0;
+    box-sizing: border-box;
+    color: var(--primary-color);
+    font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+}
+
+li {
+    list-style: none;
+}
+
+a {
+    text-decoration: none;
+    color: var(--primary-color);
+
+    &:visited,
+    &:active {
+        color: inherit
+    }
+}
+
+input {
+    outline: unset;
+    font-family: inherit;
+}
+
+ul {
+    padding: 0;
+    margin: 0;
+}
+
+#main-container {
+    display: grid;
+    grid-template-areas: "header" "main" "footer";
+    grid-template-rows: auto 1fr auto;
+    background:var(--bg-color);
+    color: var(--primary-color);
+}
+.wire{
+    width: 100%;
+    height: 1px;
+    background: var(--wire-color);
+}
+
+header {
+    grid-area: header;
+}
+
+main {
+    grid-area: main;
+    min-height: 100%;
+    width: 100%;
+}
+
+footer {
+    grid-area: footer;
+}
+svg {
+    color: var(--svg-light);
+    width: 27px;
+}
+.side-bar ul svg{
+    width: 28px
+}
+h2 span svg{
+    width: 40px;
+    color: #433e9b;
+}
+.theme-toggler{
+    & svg{
+        width: 32px
+    }
+}
+.dash-icon {
+    & svg{
+        color: #E91E63;
+    }
+}
+.side-bar ul li{
+    & svg{
+        transition: 400ms;
+    }
+    &:hover, &.active{
+        & svg{
+            color:var(--elements-hover)
+
+        }
+    }
+}
+.page-size {
+    max-width: 1280px;
+    margin: auto;
+}
+button, a, input, select, textarea{
+    transition: all 400ms ease-in-out;
+    outline:unset;
+}
+button, a, input[type='radio'], select, input[type='file']{
+    cursor: pointer;
+}
