@@ -4,6 +4,7 @@
 	import Header from '$compo/header.svelte';
 	import { onMount, afterUpdate } from 'svelte';
 	import { themeStore, toggleTheme } from '../lib/store';
+	import Footer from '$compo/footer.svelte';
 	onMount(() => {
 		toggleTheme(window.localStorage.getItem('theme'));
 	});
@@ -21,7 +22,7 @@
 			</div>
 		</div>
 	</main>
-	<footer>footer</footer>
+	<Footer/>
 </div>
 
 <style lang="scss">
@@ -40,8 +41,12 @@
 		}
 		& .left {
 			max-width: 25%;
-    		position: fixed;
-			z-index: 5
+			position: fixed;
+			z-index: 5;
+			top: 0;
+			bottom: 0;
+			display: flex;
+			align-items: center;
 		}
 		& .right {
 			width: 92%;

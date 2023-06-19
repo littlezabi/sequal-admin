@@ -34,10 +34,11 @@ ul {
     display: grid;
     grid-template-areas: "header" "main" "footer";
     grid-template-rows: auto 1fr auto;
-    background:var(--bg-color);
+    background: var(--bg-color);
     color: var(--primary-color);
 }
-.wire{
+
+.wire {
     width: 100%;
     height: 1px;
     background: var(--wire-color);
@@ -53,49 +54,125 @@ main {
     width: 100%;
 }
 
+.fadeOut {
+    animation: fadeOutx 150ms ease-in 1 forwards !important;
+    opacity: 1;
+
+    @keyframes fadeOutx {
+        0% {
+            opacity: 1;
+        }
+
+        100% {
+            opacity: 0;
+        }
+    }
+}
+
+.fade-in {
+    animation: fadeIn 400ms ease-in 1 forwards;
+    opacity: 0;
+
+    @keyframes fadeIn {
+        0% {
+            opacity: 0;
+        }
+
+        100% {
+            opacity: 1;
+        }
+    }
+}
+
+.slide-in {
+    animation: slideIn 200ms ease-in 1 forwards;
+    transform: translateY(30px);
+
+    @keyframes slideIn {
+        0% {
+            transform: translateY(30px);
+        }
+
+        100% {
+            transform: translateY(0px);
+        }
+    }
+
+}
+
 footer {
     grid-area: footer;
 }
+
 svg {
     color: var(--svg-light);
     width: 27px;
 }
-.side-bar ul svg{
+.item-head svg{
+    margin-left: 5px;
+    color: #888888;
+    width: 21px;
+}
+.side-bar ul svg {
     width: 28px
 }
-h2 span svg{
+
+h2 span svg {
     width: 40px;
     color: #433e9b;
 }
-.theme-toggler{
-    & svg{
+
+.reply-btn svg {
+    color: #6a6868;
+}
+
+.submit-input svg {
+    color: white;
+}
+
+.theme-toggler {
+    & svg {
         width: 32px
     }
 }
+
 .dash-icon {
-    & svg{
+    & svg {
         color: #E91E63;
     }
 }
-.side-bar ul li{
-    & svg{
+
+.side-bar ul li {
+    & svg {
         transition: 400ms;
     }
-    &:hover, &.active{
-        & svg{
-            color:var(--elements-hover)
 
+    &:hover,
+    &.active {
+        & svg {
+            color: var(--elements-hover)
         }
     }
 }
+
 .page-size {
     max-width: 1280px;
     margin: auto;
 }
-button, a, input, select, textarea{
+
+button,
+a,
+input,
+select,
+textarea {
     transition: all 400ms ease-in-out;
-    outline:unset;
+    outline: unset;
 }
-button, a, input[type='radio'], select, input[type='file']{
+
+button,
+a,
+input[type='radio'],
+select,
+input[type='file'] {
     cursor: pointer;
 }

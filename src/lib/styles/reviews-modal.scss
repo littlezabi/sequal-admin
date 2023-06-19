@@ -1,0 +1,192 @@
+.reviews {
+    margin: 20px 0;
+    padding: 20px;
+    color: var(--primary-color);
+    background: var(--charts-element-bg);
+    box-shadow: var(--common-shadow);
+    width: 425px;
+    border-radius: 15px;
+    padding-top: 36px;
+    position: relative;
+
+    & .dash-icon {
+        background: var(--charts-element-bg);
+        width: 43px;
+        height: 43px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: absolute;
+        border: 1px solid var(--light-color-border-2);
+        top: -19px;
+        left: 0;
+        right: 0;
+        margin: auto;
+    }
+
+    & .submit-input {
+        display: flex;
+        justify-content: center;
+        margin-top: 16px;
+        margin-bottom: 5px;
+
+        & input {
+            height: 38px;
+            width: 282px;
+            border-radius: 23px;
+            padding: 0 11px;
+            border: 2px solid var(--light-color-border);
+            background: var(--input-background);
+            color: var(--primary-color);
+        }
+
+        & button {
+            width: 42px;
+            height: 42px;
+            margin-left: 4px;
+            padding: 7px;
+            border-radius: 50%;
+            border: 2px solid var(--light-color-border);
+            background: #016fff;
+        }
+    }
+
+    & .expanded-view {
+        position: absolute;
+        width: 433px;
+        right: -55px;
+        top: 70px;
+        z-index: 1;
+        padding-top: 14px;
+
+        & .p-view {
+            margin-top: 16px;
+            display: flex;
+        }
+
+        & .a3ss3 {
+            flex-direction: column;
+            align-items: flex-start;
+
+            & div {
+                display: flex;
+                align-items: center;
+            }
+        }
+
+        & .username {
+            margin-left: 8px;
+        }
+
+        & .review {
+            margin: 8px 3px 3px 71px;
+            font-size: 16px;
+            line-height: 1.5;
+        }
+
+        &::after {
+            content: '';
+            width: 32px;
+            height: 32px;
+            position: absolute;
+            top: -2px;
+            left: 35px;
+            transform: rotate(45deg);
+            z-index: 0;
+            border-radius: 0;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: var(--modal-arrow);
+            border-right: none;
+            border-bottom: none;
+            animation: opcaity1 500ms ease-in 1 forwards;
+            opacity: 0;
+
+            @keyframes opcaity1 {
+                0% {
+                    opacity: 0;
+                }
+
+                100% {
+                    opacity: 1;
+                }
+            }
+        }
+
+        & .inner-view {
+            position: relative;
+            border: 1px solid rgba(255, 255, 255, 0.1215686275);
+            background: var(--modal-bg);
+            padding: 8px;
+            border-radius: 8px;
+            backdrop-filter: blur(18px);
+            box-shadow: 5px 6px 20px 1px #0000002e;
+        }
+    }
+
+    & section {
+        align-items: flex-start;
+        margin-bottom: 10px;
+        background: #060f2b;
+        border-radius: 8px;
+        padding: 5px 0;
+        cursor: pointer;
+        position: relative;
+
+        & .reply-btn {
+            position: absolute;
+            right: 4px;
+            top: 3px;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: none;
+            background: #0000003d;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        & p {
+            margin: 0;
+            font-size: 12px;
+            margin-top: 3px;
+        }
+    }
+
+    & .p-view {
+        & .image {
+
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: 2px solid #ff450054;
+            margin: 0 10px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 21px;
+            font-weight: 500;
+            background: var(--modal-bg);
+            & img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+            }
+        }
+    }
+
+    & .a3ss3 {
+        font-size: 12px;
+        margin-top: 5px;
+
+        & span {
+            margin-right: 8px;
+        }
+
+        & .username {
+            font-size: 14px;
+        }
+    }
+}

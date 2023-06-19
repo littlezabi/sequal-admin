@@ -1,4 +1,4 @@
-import type { PageServerData } from "./$types"
-export const load:PageServerData = ()=>{
+import type { PageServerLoad } from "./$types"
+export const load:PageServerLoad = ()=>{
     return {}
 }

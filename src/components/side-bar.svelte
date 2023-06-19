@@ -31,7 +31,7 @@
 			</a>
 		</li>
 		<li>
-			<a class="flex" href="/">
+			<a class="flex" href="/mobiles">
 				<Icon src={DevicePhoneMobile} />
 				<span>Mobile Phones</span>
 			</a>
