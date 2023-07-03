@@ -128,9 +128,9 @@ const smartSchema = new mongoose.Schema(
     mobile_pricing: { type: Object, required: true },
     original: { type: String, required: false },
     slug: { type: String, require: true, unique: true },
-    hits: { type: Number, require: false, default: 1 },
-    fans: { type: Number, require: false, default: 1 },
-    popularity: { type: Number, require: false, default: 1 },
+    views: { type: Number, require: false, default: 1 },
+    loves: { type: Number, require: false, default: 1 },
+    rating: { type: Number, require: false, default: 4 },
     subtitle: { type: String, require: false },
   },
   {

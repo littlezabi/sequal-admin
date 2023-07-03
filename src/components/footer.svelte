@@ -74,7 +74,6 @@
 		background: var(--secondary-bg);
 		color: var(--primary-color);
 		padding: 30px 10px;
-		width: 100%;
 		z-index: 1;
 		position: relative;
 		& .footer-_-3 {

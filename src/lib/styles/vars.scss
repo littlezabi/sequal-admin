@@ -16,6 +16,8 @@
     --modal-bg: linear-gradient(154deg, #ffffff, #ffffff, #ffffff4a, #ffffff4d, #ffffff4d);
     --modal-arrow: white;
     --item-list-bg: white;
+    --loading-bg: #00000008;
+    --loading-fg: linear-gradient(90deg, transparent, #34343414, transparent);
 }
 .dark{
     --bg-color: #030312;
@@ -34,4 +36,6 @@
     --modal-arrow: #0a0a48;
     --input-background: #00000052;
     --item-list-bg: #09072cdb;
+    --loading-bg: #0a0a1c;
+    --loading-fg: linear-gradient(90deg, transparent, #34343433, transparent);
 }

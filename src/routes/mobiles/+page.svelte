@@ -14,6 +14,8 @@
 		Photo,
 		QueueList, Wrench, Cog6Tooth
 	} from 'svelte-hero-icons';
+	import { modal, modalUpdate } from '$lib/store';
+	import SmartDeviceView from '$compo/smart-device-view.svelte';
 	export let data: PageData;
 	let items: any = data.list;
 	const sort = (by: any): any => {
@@ -36,11 +38,13 @@
 				else return 0;
 			});
 	};
-    const handleEdit = (id:string)=>{
-        console.log(id)
+    const handleEdit = (item:any)=>{
+		modalUpdate({visiable: true, ...item})
     }
 </script>
-
+{#if $modal.visiable}
+	<SmartDeviceView/>
+{/if}
 <h2>Mobile List</h2>
 <div class="mobile-view-list">
     <div class="head">
@@ -108,7 +112,7 @@
 				<span
 					>{#if item.isActive}<Icon src={Eye} /> {:else} <Icon src={EyeSlash} />{/if}</span
 				>
-				<button on:click={()=>handleEdit(item._id)}><Icon src={Wrench} /></button>
+				<button on:click={()=>handleEdit(item)}><Icon src={Wrench} /></button>
 			</section>
 		{/each}
         <section class="item-head item-section" style={`background: ${getRandomColor(0.1)}`}>
@@ -196,6 +200,10 @@
                 height: 50px;
                 background: none;
                 border: none;
+				border-radius: 5px;
+				&:hover{
+					background: #9b9bff69;
+				}
             }
 			& span {
 				width: 98px;
@@ -237,9 +245,7 @@
 					display: flex;
 					align-items: center;
 				}
-				& svg {
-					margin-left: 10px;
-				}
+				
 			}
 			& .item-name {
 				padding: 0 10px;
