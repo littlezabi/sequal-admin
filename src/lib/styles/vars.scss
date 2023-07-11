@@ -1,6 +1,6 @@
 :root{
     --bg-color: rgb(242, 253, 255);
-    --secondary-bg: #eeeeee;
+    --secondary-bg: #eaeaea;
     --light-color-border: #ffffff30;
     --light-color-border-2: #dedede30;
     --priamry-color: #000;
@@ -14,11 +14,18 @@
     --wire-color: linear-gradient(45deg, transparent, #0000003b, transparent);
     --input-background: #ffffff;
     --modal-bg: linear-gradient(154deg, #ffffff, #ffffff, #ffffff4a, #ffffff4d, #ffffff4d);
+    --modal-bg-2: linear-gradient(154deg, #ffffffab, #ffffffd4, #ffffffcc, #ffffffc4, #ffffff85);
     --modal-arrow: white;
     --item-list-bg: white;
     --loading-bg: #00000008;
     --loading-fg: linear-gradient(90deg, transparent, #34343414, transparent);
+    --button-color: #11133e;
+    --button-border: #ffffff21;
+    --color-success: 50, 190, 10;
+    --color-alert: 255, 67, 26;
+    --color-danger: 255, 14, 0;
 }
+
 .dark{
     --bg-color: #030312;
     --svg-light: #7990d5;
@@ -38,4 +45,9 @@
     --item-list-bg: #09072cdb;
     --loading-bg: #0a0a1c;
     --loading-fg: linear-gradient(90deg, transparent, #34343433, transparent);
+    --button-color: #11133e;
+    --button-border: #ffffff21;
+    --color-success: 0, 255, 116;
+    --color-alert: 255, 218, 0;
+    --color-danger: 255, 132, 0;
 }
