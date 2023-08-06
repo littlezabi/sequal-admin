@@ -56,12 +56,14 @@
 			</ul>
 			<ul>
 				<li>
-					<section class="profile flex">
-						<div class="flex">
-							<Icon class="user-icon" src={User} />
-						</div>
-						<span>LittleZabi</span>
-					</section>
+					<a href="/login">
+						<section class="profile flex">
+							<div class="flex">
+								<Icon class="user-icon" src={User} />
+							</div>
+							<span>LittleZabi</span>
+						</section>
+					</a>
 				</li>
 			</ul>
 		</div>
@@ -115,7 +117,7 @@
 			padding: 0 64px;
 		}
 		& .a0co35ll2 {
-			& li{
+			& li {
 				margin-left: 23px;
 			}
 			& a,

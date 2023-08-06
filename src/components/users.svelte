@@ -1,7 +1,6 @@
 <script lang="ts">
-	import { getRandomColor, life, setUserCharName, trimTitle } from '$lib/globals';
+	import { getRandomColor, life, setUserCharName } from '$lib/globals';
 	import { Icon, MapPin, Users } from 'svelte-hero-icons';
-
 	export let users: any = [];
 </script>
 

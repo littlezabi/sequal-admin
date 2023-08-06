@@ -1,5 +1,4 @@
 export const WEBSITE_NAME = 'Sequal Admin'
-export const IMAGE_ROOT = 'http://localhost:3000/'
 export const bg40Colors = [
 	'rgba(255, 159, 232, 0.5)',
 	'rgba(54, 62, 235, 0.5)',

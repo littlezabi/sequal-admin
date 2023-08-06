@@ -53,6 +53,7 @@ ul {
     grid-template-rows: auto 1fr auto;
     background: var(--bg-color);
     color: var(--primary-color);
+    min-height: 100vh;
 }
 
 .wire {
@@ -71,6 +72,9 @@ main {
     width: 100%;
 }
 
+footer {
+    grid-area: footer;
+}
 .fadeOut {
     animation: fadeOutx 150ms ease-in 1 forwards !important;
     opacity: 1;
@@ -117,15 +121,14 @@ main {
 
 }
 
-footer {
-    grid-area: footer;
-}
 
 svg {
     color: var(--svg-light);
     width: 27px;
 }
-
+.keywords-list button svg{
+    color: black ;
+}
 .add-image svg {
     width: 73px;
 }
@@ -168,7 +171,12 @@ h2 span svg {
 .reply-btn svg {
     color: #6a6868;
 }
-
+svg.success{
+    color: rgb(var(--color-success));;
+}
+svg.alert{
+    color: rgb(var(--color-alert));
+}
 .submit-input svg {
     color: white;
 }
@@ -212,6 +220,7 @@ select,
 textarea {
     transition: all 400ms ease-in-out;
     outline: unset;
+    font-family: inherit;
 }
 
 button,

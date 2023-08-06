@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { getRandomColor, life, setUserCharName, trimTitle } from '$lib/globals';
+	import { getRandomColor, life, setUserCharName } from '$lib/globals';
 	import { Icon, MapPin, PaperAirplane, XMark } from 'svelte-hero-icons';
 	export let item: any = [];
 	export let id: string;
@@ -10,7 +10,8 @@
 	const removeModal = () => {
 		closing = true;
 		setTimeout(() => {
-			document.getElementById(id).innerHTML = '';
+			let x = document.getElementById(id) as HTMLElement;
+			x.innerHTML = '';
 		}, 100);
 	};
 </script>

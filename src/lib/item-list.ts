@@ -1,5 +1,5 @@
 import database from './database';
-import { smartModel } from './models';
+import { Admin, Settings, Users, smartModel } from '$lib/models';
 
 await database.connect();
 const projectSmart = {
@@ -14,3 +14,12 @@ export const mobileList = async (startIndex:number=0, limit:number=20) => {
 	const list = await smartModel.find({}, projectSmart ).skip(startIndex).limit(limit).lean();
     return list.map((e:any, i:number) => {return {...e, index: ++i + startIndex}})
 };
+
+export const getSettings = async ()=>{
+	return await Settings.findOne({}, {cookiesOptions: 0, updatedAt: 0});
+}
+export const getUsers = async (startIndex:number = 0, limit:number = 20)=>{
+	const users = await Users.find().skip(startIndex).limit(limit).sort('-_id').lean();
+	const admins = await Admin.find().lean();
+	return {users: users.map((e:any, x:number) => {return {...e, index: ++x + startIndex}}), admins: admins.map((e:any, x:any) => {return {...e, index: ++x}})}
+}

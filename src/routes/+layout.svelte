@@ -3,10 +3,19 @@
 	import SideBar from '$compo/side-bar.svelte';
 	import Header from '$compo/header.svelte';
 	import { onMount } from 'svelte';
-	import { themeStore, toggleTheme, messages, updateMessages } from '../lib/store';
+	import {
+		themeStore,
+		toggleTheme,
+		messages,
+		updateMessages,
+		updateStaticData
+	} from '../lib/store';
 	import Footer from '$compo/footer.svelte';
-	import { Icon, XMark } from 'svelte-hero-icons';
+	import { CheckCircle, ExclamationTriangle, Icon, XMark } from 'svelte-hero-icons';
 	import { fade } from 'svelte/transition';
+	import type { PageData } from './$types';
+	export let data: PageData;
+	$: data, updateStaticData({ settings: JSON.parse(data.settings) });
 	onMount(() => {
 		toggleTheme(window.localStorage.getItem('theme'));
 	});
@@ -16,12 +25,20 @@
 	<Header />
 	<main class="page-size">
 		{#if $messages.message}
-			<div class='g-messages {$messages.variant}' transition:fade>
-				<span>
-					{$messages.message}
-				</span>
-				<button on:click={()=>updateMessages()}>
-					<Icon src={XMark}/> 
+			<div class="g-messages {$messages.variant}" transition:fade>
+				<div class="flex">
+					<span style="margin-right: 8px;">
+						{$messages.message}
+					</span>
+					{#if $messages.variant === 'success'}
+						<Icon class="success" src={CheckCircle} />
+					{/if}
+					{#if $messages.variant === 'alert' || $messages.variant === 'danger'}
+						<Icon class="alert" src={ExclamationTriangle} />
+					{/if}
+				</div>
+				<button on:click={() => updateMessages()}>
+					<Icon src={XMark} />
 				</button>
 			</div>
 		{/if}
@@ -34,11 +51,11 @@
 			</div>
 		</div>
 	</main>
-	<Footer/>
+	<Footer />
 </div>
 
 <style lang="scss">
-	.g-messages{
+	.g-messages {
 		background: var(--secondary-bg);
 		max-width: 400px;
 		margin: auto;
@@ -58,30 +75,30 @@
 		margin-top: 10px;
 		border: 1px solid transparent;
 		z-index: 1000;
-		&.success{
+		&.success {
 			color: rgb(var(--color-success));
 			border-color: rgba(var(--color-success), 0.3);
 		}
-		&.alert{
+		&.alert {
 			color: rgb(var(--color-alert));
 			border-color: rgba(var(--color-alert), 0.3);
 		}
-		&.danger{
+		&.danger {
 			color: rgb(var(--color-danger));
 			border-color: rgba(var(--color-danger), 0.3);
 		}
-	& span{
-		display: block;
-   	 padding: inherit;
-	}
-	& button{
-		border-radius: 50%;
-		width: 32px;
-		height: 32px;
-		display: flex;
-		background: none;
-		border: none;
-	}
+		& span {
+			display: block;
+			padding: inherit;
+		}
+		& button {
+			border-radius: 50%;
+			width: 32px;
+			height: 32px;
+			display: flex;
+			background: none;
+			border: none;
+		}
 	}
 	.main-wrapper {
 		display: flex;
@@ -107,7 +124,7 @@
 		}
 		& .right {
 			width: 92%;
-    		margin-left: 100px;		
+			margin-left: 100px;
 		}
 	}
 </style>

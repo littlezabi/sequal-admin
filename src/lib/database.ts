@@ -1,4 +1,6 @@
 import mongoose from "mongoose";
+import { MONGO_DB } from "$env/static/private";
+
 let NODE_ENV = 'dev'
 interface ConnectionsType {
   isConnected: boolean | any;
@@ -20,7 +22,7 @@ async function connect() {
     }
     await mongoose.disconnect();
   }
-  const db = await mongoose.connect('mongodb://127.0.0.1/bluehorde');
+  const db = await mongoose.connect(MONGO_DB);
   console.log("new connection");
   connection.isConnected = db.connections[0].readyState;
 }

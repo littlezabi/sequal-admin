@@ -61,7 +61,7 @@
 			</a>
 		</li>
 		<li>
-			<a class="flex" href="/">
+			<a class="flex" href="/users">
 				<Icon src={Users} />
 				<span>Users</span>
 			</a>

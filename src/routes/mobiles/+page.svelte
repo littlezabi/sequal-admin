@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { PageData } from './$types';
-	import { IMAGE_ROOT } from '$lib/constant';
+	import { PUBLIC_IMAGES_FETCH_URI } from '$env/static/public';
 	import { getRandomColor, life } from '$lib/globals';
 	import {
 		Icon,
@@ -12,7 +12,9 @@
 		Clock,
 		ListBullet,
 		Photo,
-		QueueList, Wrench, Cog6Tooth
+		QueueList,
+		Wrench,
+		Cog6Tooth
 	} from 'svelte-hero-icons';
 	import { modal, modalUpdate } from '$lib/store';
 	import SmartDeviceView from '$compo/smart-device-view.svelte';
@@ -30,25 +32,30 @@
 				return 0;
 			});
 		} else if (by === 'createdAt')
-			items = data.list.sort((a: any, b: any) => new Date(a.createdAt) - new Date(b.createdAt));
-		else
+			items = data.list.sort((a: any, b: any) => {
+				const x: any = new Date(a.createdAt);
+				const y: any = new Date(b.createdAt);
+				return x - y;
+			});
+		 else
 			items = data.list.sort((a: any, b: any) => {
 				if (a[by] > b[by]) return comp_a;
 				if (a[by] < b[by]) return comp_b;
 				else return 0;
 			});
 	};
-    const handleEdit = (item:any)=>{
-		modalUpdate({visiable: true, ...item})
-    }
+	const handleEdit = (item: any) => {
+		modalUpdate({ visible: true, ...item });
+	};
 </script>
-{#if $modal.visiable}
-	<SmartDeviceView/>
+
+{#if $modal.visible}
+	<SmartDeviceView />
 {/if}
 <h2>Mobile List</h2>
 <div class="mobile-view-list">
-    <div class="head">
-        <p>Change mobile and watches setting</p>
+	<div class="head">
+		<p>Change mobile and watches setting</p>
 		<span>
 			Sort By
 			<select class="sort-select" on:change={(e) => sort(e)}>
@@ -103,7 +110,7 @@
 			<section class="item-section list" style={`background: ${getRandomColor(0.1)}`}>
 				<span class="item-index">{item.index}</span>
 				<span>
-					<img src={IMAGE_ROOT + item.image} alt={item.title} />
+					<img src={PUBLIC_IMAGES_FETCH_URI + item.image} alt={item.title} />
 				</span>
 				<span class="item-name">{item.title}</span>
 				<span class="item-cat">{item.category}</span>
@@ -112,10 +119,10 @@
 				<span
 					>{#if item.isActive}<Icon src={Eye} /> {:else} <Icon src={EyeSlash} />{/if}</span
 				>
-				<button on:click={()=>handleEdit(item)}><Icon src={Wrench} /></button>
+				<button on:click={() => handleEdit(item)}><Icon src={Wrench} /></button>
 			</section>
 		{/each}
-        <section class="item-head item-section" style={`background: ${getRandomColor(0.1)}`}>
+		<section class="item-head item-section" style={`background: ${getRandomColor(0.1)}`}>
 			<span class="flex item-index">
 				# <Icon src={ListBullet} />
 			</span>
@@ -160,7 +167,7 @@
 		align-items: flex-end;
 		margin: 8px -2px 24px 0;
 		justify-content: space-between;
-        align-items: center;
+		align-items: center;
 		& .sort-select {
 			margin: 0 7px;
 			width: 188px;
@@ -195,16 +202,16 @@
 			text-transform: capitalize;
 			min-height: 39px;
 			cursor: pointer;
-            & button{
-                width: 64px;
-                height: 50px;
-                background: none;
-                border: none;
+			& button {
+				width: 64px;
+				height: 50px;
+				background: none;
+				border: none;
 				border-radius: 5px;
-				&:hover{
+				&:hover {
 					background: #9b9bff69;
 				}
-            }
+			}
 			& span {
 				width: 98px;
 				&:nth-child(1) {
@@ -245,7 +252,6 @@
 					display: flex;
 					align-items: center;
 				}
-				
 			}
 			& .item-name {
 				padding: 0 10px;

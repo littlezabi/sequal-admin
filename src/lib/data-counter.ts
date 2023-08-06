@@ -57,11 +57,12 @@ export const countCategories = async () => {
 			{
 				$project: {
 					_id: 0,
-					fullname: 1,
 					country: 1,
 					createdAt: 1,
 					review: 1,
-					'user.avatar': 1
+					'user.avatar': 1,
+					'user.firstname': 1,
+					'user.lastname': 1
 				}
 			}
 		])

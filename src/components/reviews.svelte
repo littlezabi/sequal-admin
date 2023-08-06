@@ -21,7 +21,7 @@
 				<div class="image">
 					{#if !item.user.avatar || item.user.avatar === ''}
 						<div>
-							{setUserCharName(item?.fullname)}
+							{setUserCharName(item.user.firstname+' '+item.user.lastname)}
 						</div>
 					{:else}
 						<img
@@ -34,7 +34,7 @@
 			</div>
 			<div class="text">
 				<div class="flex a3ss3">
-					<span class="username">{item.fullname}</span>
+					<span class="username">{item.user.firstname} {item.user.lastname}</span>
 					<Icon src={MapPin} size={'20'} />
 					<span class="country">{item.country}</span>
 					<span class="createdAt">{life(item.createdAt).from()}</span>

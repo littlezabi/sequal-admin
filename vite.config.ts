@@ -5,5 +5,9 @@ export default defineConfig({
 	plugins: [sveltekit()],
 	ssr: {
 		noExternal: ['svelte-hero-icons', 'chart.js']
-	}
+	},
+	optimizeDeps: {
+		// Disable dynamic imports, which will disable HMR
+		include: ['@kurkle/color', 'svelte-hero-icons', 'chart.js', 'axios'], // Add other dependencies to exclude if needed
+	},
 });

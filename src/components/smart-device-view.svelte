@@ -2,25 +2,28 @@
 	import axios from 'axios';
 	import { Icon, Photo, Plus, XMark } from 'svelte-hero-icons';
 	import { modal, modalUpdate, static_data, updateMessages, updateStaticData } from '$lib/store';
-	import { IMAGE_ROOT } from '$lib/constant';
+	import { PUBLIC_IMAGES_FETCH_URI } from '$env/static/public';
 	import { life, numberFormat } from '$lib/globals';
 	import Loading from './loading.svelte';
 	import { fade } from 'svelte/transition';
 	import CustomNumberInput from './custom-number-input.svelte';
 	let loading = true;
 	let item = $modal;
-	// $: $modal, (item = $modal), setTimeout(() => getItem($modal._id), 10);
+	let loves: number = 0;
+	let views: number = 0;
+	let rating: number = 0;
+	let headers: string = '';
 	$: $modal, (item = $modal), getItem($modal._id);
 	let cats: [] | any = $static_data.categories;
 	document.querySelector('body')?.classList.add('modal-open');
 	const handleClose = () => {
-		modalUpdate({ visiable: false });
+		modalUpdate({ visible: false });
 		document.querySelector('body')?.classList.remove('modal-open');
 	};
 	let filesList: any = [];
 	let item_specs: any = [];
 	let item_specs_exclude = [
-		'visiable',
+		'visible',
 		'_id',
 		'title',
 		'category',
@@ -41,6 +44,26 @@
 		'headers'
 	];
 	let dataFrame: any = {};
+	const postDataframe = async ()=>{
+		await axios.post('/api/set-items', dataFrame).then(response => {
+			console.log(response.data)
+		}).catch(e => {
+			console.log('error: ', e)
+		})
+	}
+	const headersToString = (sep = '\n') => {
+		headers = '';
+		dataFrame.headers.map((e: string, i: number) => {
+			if (e !== '') {
+				if (i + 1 >= dataFrame.headers.length) headers += e;
+				else {
+					if (i + 1 >= $static_data.settings.deviceViewHeaderTextLength) headers += e;
+					else headers += e + sep;
+				}
+			}
+		});
+	};
+
 	const getItem = async (_id: string) => {
 		await axios
 			.get('/api/get-items/', {
@@ -50,10 +73,11 @@
 				loading = false;
 				item = { ...item, ...e.data.item };
 				dataFrame = item;
-				let x = Object.keys(item);
-				item_specs = x.filter((e) => (item_specs_exclude.includes(e) ? null : e));
-				// console.log('item_specs: ', item_specs)
-				filesList = [IMAGE_ROOT + item.image, ...filesList];
+				headersToString();
+				item_specs = Object.keys(dataFrame)
+					.filter((e) => (item_specs_exclude.includes(e) ? null : e))
+					.sort();
+				filesList = [PUBLIC_IMAGES_FETCH_URI + item.image, ...filesList];
 				if (!(cats.length > 0)) {
 					updateStaticData({ categories: e.data.cats });
 					cats = e.data.cats;
@@ -64,12 +88,12 @@
 				console.error(e);
 			});
 	};
-	const handleImage = (e: any) => {
-		[...e.target.files].forEach((image) => {
+	const handleImage = (file: any) => {
+		[...file.target.files].forEach((image) => {
+			if (dataFrame.images) dataFrame.images = [...dataFrame.images, image];
+			else dataFrame.images = [image];
 			let reader = new FileReader();
-			reader.onload = (e: any) => {
-				filesList = [...filesList, e.target.result];
-			};
+			reader.onload = (e: any) => (filesList = [...filesList, e.target.result]);
 			reader.readAsDataURL(image);
 		});
 	};
@@ -107,7 +131,6 @@
 				message: 'Enter a value of your new specification!',
 				variant: 'danger'
 			});
-
 		let exist = dataFrame[newSpecItem.specs].filter((item: any) => Object.keys(item)[0] === key);
 		if (exist.length > 0) {
 			return updateMessages({
@@ -135,31 +158,114 @@
 			</div>
 			
 		`;
-		// newSpecItem.specs_list.appendChild(`<span>hello world</span>`)
-		// newSpecItem = { ...newSpecItem, key: '', value: '' };
 	};
 	const handleForm = (e: any) => {
 		e.preventDefault();
 		let inputs = document.querySelectorAll('#dataframe-form input');
-		let desc = document.querySelectorAll('#dataframe-form #description');
-		let cat = document.querySelectorAll('#dataframe-form #category');
-
-		[...inputs].forEach((element:any) => {
+		let specsTitle = document.querySelectorAll('#dataframe-form .spec-item-title');
+		let titles: any = {};
+		for (const title of specsTitle) {
+			let original: any = title.getAttribute('data-original');
+			if (original) titles[original] = title.innerText.toLowerCase().trim();
+		}
+		[...inputs].forEach((element: any) => {
 			let key = element.name.split('_x_')[1];
 			let value = element.value;
 			if (key) {
 				let loc = element.name?.split('___')[0];
 				let index = element.name?.match(/\d+(?=_x_)/);
 				if (index) index = index[0];
-				console.log('key => ', key);
-				dataFrame[loc][index] = {[key]:value}
-				console.log(dataFrame[loc][index], '=> ', {[key]:value});
+				dataFrame[loc][index] = { [key]: value };
+			}
+			key = element.name.split('_y_')[1];
+			if (key) {
+				value = element.value;
+				dataFrame[key] = value;
 			}
 		});
-		console.log('results: ', dataFrame['features'])
+		Object.keys(dataFrame).map((key) => {
+			if (titles[key] && titles[key] !== key) {
+				dataFrame[titles[key]] = dataFrame[key];
+				delete dataFrame[key];
+			}
+		});
+		dataFrame['description'] = document.querySelector('#dataframe-form #description')?.value;
+		dataFrame['category'] = document.querySelector('#dataframe-form #category')?.value;
+		item_specs = Object.keys(dataFrame).filter((e) => (item_specs_exclude.includes(e) ? null : e));
+		item_specs = item_specs.sort();
+		dataFrame.loves = loves;
+		dataFrame.rating = rating;
+		dataFrame.views = views;
+		postDataframe()
 	};
-	let child_value = 0;
-	$: child_value, console.log(child_value);
+	const handleAddNewSpec = () => {
+		const spec_title: any = document.getElementById('new-spec-title');
+		const spec_name: any = document.getElementById('new-spec-name');
+		const spec_value: any = document.getElementById('new-spec-value');
+		updateMessages({ message: false });
+		if (spec_title.value !== '') {
+			if (Object.keys(dataFrame).includes(spec_title.value.toLowerCase()))
+				updateMessages({ message: 'Specification title is already exist!', variant: 'alert' });
+			else if (spec_name.value !== '') {
+				if (spec_value.value !== '') {
+					dataFrame[spec_title.value] = [{ [spec_name.value]: spec_value.value }];
+					item_specs.push(spec_title.value);
+					spec_title.value = '';
+					spec_name.value = '';
+					spec_value.value = '';
+					updateMessages({ message: 'New specification added successfully!', variant: 'success' });
+				} else updateMessages({ message: 'Add value of new specification.', variant: 'danger' });
+			} else updateMessages({ message: 'Add name of new specification.', variant: 'danger' });
+		} else updateMessages({ message: 'Add a title of new specification.', variant: 'danger' });
+	};
+	const removeKeyword = (keyword: string) => {
+		dataFrame.keywords = dataFrame.keywords.replace(keyword + ',', '');
+	};
+	const addKeywords = (e: any) => {
+		if (e.target.value.includes(',')) {
+			if (!dataFrame.keywords.includes(e.target.value))
+				dataFrame.keywords += e.target.value.trim() + ' ';
+			e.target.value = '';
+		}
+	};
+	const addToHeader = (id: string) => {
+		if (dataFrame.headers.length >= $static_data.settings.deviceViewHeaderTextLength) {
+			updateMessages({
+				message: `headers limit is ${$static_data.settings.deviceViewHeaderTextLength} we can't add more.`,
+				variant: 'alert'
+			});
+			return 0;
+		}
+		const value = document?.getElementById(id)?.value;
+		if (dataFrame.headers.includes(value)) {
+			updateMessages({
+				message: `(${value}) already exist on headers.`,
+				variant: 'alert'
+			});
+			return 0;
+		}
+		if (value !== '') {
+			dataFrame.headers = [...dataFrame.headers, value];
+			headersToString();
+			updateMessages({ message: `(${value}) added to headers.`, variant: 'success' });
+		}
+	};
+	const handleHeadersArea = (e: any) => {
+		updateMessages();
+		let h = e.target.value.trim().split('\n');
+		let x: any = [];
+		for (let t of h) if (!x.includes(t.trim()) && t !== '') x.push(t.trim());
+		x = x.slice(0, $static_data.settings.deviceViewHeaderTextLength);
+		dataFrame.headers = x;
+		headersToString();
+		if (h.length > $static_data.settings.deviceViewHeaderTextLength) {
+			updateMessages({
+				message: `headers limit is ${$static_data.settings.deviceViewHeaderTextLength} we can't add more.`,
+				variant: 'alert'
+			});
+			return 0;
+		}
+	};
 </script>
 
 <div class="modal">
@@ -218,7 +324,6 @@
 	<div class="inner-modal">
 		<div class="form" id="dataframe-form">
 			<h2>{item.title}</h2>
-
 			{#if loading}
 				<span>
 					<Loading loading_lines={2} />
@@ -242,7 +347,7 @@
 						<label for="title">DEVICE TITLE HERE</label>
 						<input
 							type="text"
-							name="title"
+							name="_y_title"
 							id="title"
 							placeholder="E.g. Samsung Galaxy A02"
 							value={item.title}
@@ -251,7 +356,7 @@
 					</div>
 					<div class="a03x">
 						<label for="category">DEVICE CATEGORY</label>
-						<select name="category" id="category">
+						<select name="_y_category" id="category">
 							{#if !cats.length}
 								<option selected value={item.category}>{item.category}</option>
 							{/if}
@@ -282,6 +387,29 @@
 						{/if}
 					</div>
 				</div>
+				<div class="flex-yxz">
+					<div class="a03x full-w">
+						<label for="description"
+							>PHONE HEADERS <small
+								>(seperate with Enter (\n). You can add maximum {$static_data.settings
+									.deviceViewHeaderTextLength} headers)</small
+							></label
+						>
+						{#if loading}
+							<div style="width: 256px;">
+								<Loading />
+							</div>
+						{:else}
+							<textarea
+								name="headers"
+								id="headers"
+								on:change={handleHeadersArea}
+								placeholder="Type something about phone"
+								required>{headers}</textarea
+							>
+						{/if}
+					</div>
+				</div>
 
 				<div class="flex-yxz">
 					<div class="a03x full-w image-input">
@@ -302,11 +430,11 @@
 							name="phone-image"
 							id="phone-image"
 							accept="image/*"
+							multiple={true}
 							on:change={handleImage}
 						/>
 					</div>
 				</div>
-
 				<div class="flex-yxz image-list">
 					{#each filesList as file}
 						<div class="image-view">
@@ -318,7 +446,9 @@
 
 				{#each item_specs as specs}
 					<div class="add-spec-item">
-						<h3 class="spec-item-title">{specs}</h3>
+						<h3 class="spec-item-title" id={'__' + specs} data-original={specs} contenteditable>
+							{specs}
+						</h3>
 						<button
 							type="button"
 							on:click={() => addNewElement(specs.replaceAll(' ', '') + '-super')}
@@ -328,28 +458,70 @@
 					<div class="flex-yxz spec-items" id="{specs.replaceAll(' ', '')}-super">
 						{#each dataFrame[specs] as spec, item_index}
 							{#each Object.keys(spec) as key}
-								<div class="a03x">
+								<div class="a03x c-88323">
 									<label for="s{key.replaceAll(' ', '')}-spec">{key}</label>
 									<input
 										type="text"
 										name="{specs}___{item_index}_x_{key}"
 										value={spec[key]}
 										id="s{key.replaceAll(' ', '')}-spec"
-										placeholder="Enter {key} details"
 									/>
+									<button
+										class="add-to-header"
+										type="button"
+										on:click={() => addToHeader(`s${key.replaceAll(' ', '')}-spec`)}
+									>
+										<Icon src={Plus} />
+									</button>
 								</div>
 							{/each}
 						{/each}
 					</div>
 				{/each}
-
+				<div class="border-tag">
+					<div class="flex-yxz spec-items">
+						<div class="a03x">
+							<label for="new-spec-title">Add a new specification title</label>
+							<input
+								type="text"
+								name="new-spec-title"
+								value=""
+								id="new-spec-title"
+								placeholder="Enter name of new specification..."
+							/>
+						</div>
+					</div>
+					<div class="flex-yxz spec-items">
+						<div class="a03x">
+							<label for="new-spec-name">Add minimum one specification name</label>
+							<input
+								type="text"
+								name="new-spec-name"
+								value=""
+								id="new-spec-name"
+								placeholder="Enter name of new specification..."
+							/>
+						</div>
+						<div class="a03x">
+							<label for="new-spec-value">Add minimum one specification value</label>
+							<input
+								type="text"
+								name="new-spec-value"
+								value=""
+								id="new-spec-value"
+								placeholder="Enter name of new specification..."
+							/>
+						</div>
+						<button type="button" on:click={handleAddNewSpec} class="btn">Add Spec</button>
+					</div>
+				</div>
 				<div class="flex-yxz number-sec">
 					<div class="a03x">
-						<CustomNumberInput bind:output={child_value} value={dataFrame.views} title={'Views'} />
+						<CustomNumberInput bind:output={views} value={dataFrame.views} title={'Views'} />
 					</div>
 					<div class="a03x">
 						<CustomNumberInput
-							bind:output={child_value}
+							bind:output={rating}
 							value={dataFrame.rating}
 							title={'Rating'}
 							maximum={5.0}
@@ -359,39 +531,57 @@
 						/>
 					</div>
 					<div class="a03x">
-						<CustomNumberInput bind:output={child_value} value={dataFrame.loves} title={'Loves'} />
+						<CustomNumberInput bind:output={loves} value={dataFrame.loves} title={'Loves'} />
 					</div>
 				</div>
 
 				<div class="flex-yxz">
-					<h3 class="spec-item-title">Keywords</h3>
+					<h3 class="spec-item-title">KEYWORDS</h3>
 					<div class="keywords-list">
 						{#if dataFrame.keywords}
 							{#each dataFrame.keywords.split(',') as keyword}
 								{#if keyword.length > 2}
-									<span>{keyword}</span>
+									<span>
+										{keyword}
+										<button type="button" on:click={() => removeKeyword(keyword)}
+											><Icon src={XMark} /></button
+										>
+									</span>
 								{/if}
 							{/each}
 						{/if}
 					</div>
 					<div class="a03x">
-						<label for="keywords">ENTER KEYWORD</label>
+						<label for="keywords">ENTER KEYWORD <small>(seperate with comma)</small></label>
 						<input
 							type="text"
 							name="keywords"
 							id="keywords"
 							placeholder="Enter revelant keyword..."
+							on:keyup={addKeywords}
 						/>
 					</div>
 				</div>
 
 				<div class="flex-yxz">
 					<div class="a03x a03x-1">
-						<input type="checkbox" name="is-active" id="is-active" checked={item.isActive} />
+						<input
+							type="checkbox"
+							on:change={(e) => (dataFrame.isActive = e.target?.checked)}
+							name="is-active"
+							id="is-active"
+							checked={item.isActive}
+						/>
 						<label for="is-active">VISIBLE <small>(toggle visibility of the device)</small></label>
 					</div>
 					<div class="a03x a03x-1">
-						<input type="checkbox" name="is-new" id="is-new" checked={item.isNew} />
+						<input
+							type="checkbox"
+							name="is-new"
+							id="is-new"
+							on:change={(e) => (dataFrame.isNew = e.target?.checked)}
+							checked={item.isNew}
+						/>
 						<label for="is-new">ITEM IS NEW <small>(toggle to item as new)</small></label>
 					</div>
 				</div>
@@ -404,7 +594,7 @@
 						{:else}
 							<input
 								type="text"
-								name="slug"
+								name="_y_slug"
 								value={item.slug}
 								id="slug"
 								placeholder="Enter phone slug here..."
@@ -412,7 +602,6 @@
 						{/if}
 					</div>
 				</div>
-
 				<input type="submit" value="UPDATE PHONE" />
 			</form>
 		</div>
@@ -420,391 +609,5 @@
 </div>
 
 <style lang="scss">
-	.spec-input-modal {
-		position: fixed;
-		z-index: 1;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		background: #000000b8;
-		backdrop-filter: blur(11px);
-		left: 0;
-		right: 0;
-		bottom: 0;
-		top: 0;
-		& .inner-spec-modal {
-			background: var(--modal-bg-2);
-			width: 497px;
-			padding: 10px;
-			border-radius: 3px;
-			border: 1px solid #ffffff17;
-			& .form {
-				margin: 0;
-				& input[type='text'] {
-					width: 100% !important;
-				}
-				& button {
-					width: 48% !important;
-					margin: 11px 3px;
-					height: 42px;
-					background: var(--button-color);
-					border: 1px solid var(--button-border);
-					border-radius: 34px;
-					font-size: 14px;
-					font-family: 'Inter';
-					color: white;
-					font-weight: 500;
-					&:hover {
-						opacity: 0.7;
-					}
-				}
-			}
-		}
-	}
-	.add-spec-item {
-		margin-top: 26px;
-		display: flex;
-		align-items: center;
-		& button {
-			background: var(--secondary-bg);
-			width: 28px;
-			height: 28px;
-			border-radius: 50%;
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			margin-left: 12px;
-			border: 2px solid #0000001c;
-			padding: 4px;
-		}
-		& .spec-item-title {
-			margin: 0;
-			text-transform: uppercase;
-		}
-	}
-	.keywords-list {
-		margin: 13px 0;
-		& span {
-			background-color: rgba(0, 45, 255, 0.0901960784);
-			border: 1px solid #008dff36;
-			padding: 9px 12px;
-			margin: 3px 4px;
-			display: inline-block;
-			font-size: 13px;
-			border-radius: 18px;
-		}
-	}
-
-	.image-view {
-		position: relative;
-		cursor: pointer;
-		& button {
-			position: absolute;
-			right: 0;
-			width: 25px;
-			top: -9px;
-			padding: 3px;
-			height: 25px;
-			display: flex;
-			margin: 0;
-			align-items: center;
-			justify-content: center;
-			background: black;
-			border: none;
-			border-radius: 50%;
-			display: none;
-		}
-		&:hover {
-			& > button {
-				display: flex;
-			}
-		}
-	}
-	.image-input {
-		& input {
-			display: none;
-		}
-		& .add-image {
-			padding: 10px;
-			border: 1px solid rgba(0, 255, 141, 0.1411764706);
-			width: 213px;
-			border-radius: 8px;
-			margin: 10px 0;
-			text-align: center;
-			display: flex;
-			flex-direction: column;
-			align-items: center;
-			& span {
-				text-align: center;
-				width: 100%;
-				font-size: 11px;
-			}
-		}
-	}
-	.image-list {
-		margin: 5px 0;
-		background: #27315f1a;
-		padding: 10px;
-		border-radius: 10px;
-		min-height: 100px;
-		& img {
-			height: 110px;
-			margin: 0 5px;
-		}
-	}
-	.modal {
-		background: #00000073;
-		position: fixed;
-		top: 0;
-		bottom: 0;
-		left: 0;
-		backdrop-filter: blur(18px);
-		right: 0;
-		width: 100%;
-		z-index: 10;
-		color: var(--primary-color);
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		& .close-btn {
-			position: absolute;
-			top: 34px;
-			right: 52px;
-			border-radius: 35px;
-			width: 43px;
-			background: #383838;
-			height: 43px;
-			border: none;
-			&:hover {
-				background: #ff004e;
-			}
-		}
-		& .inner-modal {
-			color: inherit;
-			border-radius: 8px;
-			background: var(--bg-color);
-			padding: 20px;
-			max-width: 90%;
-			overflow-y: scroll;
-			max-height: 90%;
-			border: 1px solid rgba(255, 255, 255, 0.0705882353);
-			&::-webkit-scrollbar {
-				width: 2px;
-				background: var(--bg-color);
-			}
-			&::-webkit-scrollbar-thumb {
-				background: linear-gradient(45deg, transparent, #4b3fff, transparent);
-			}
-		}
-	}
-
-	.form {
-		padding: 13px 57px;
-		margin-left: 76px;
-		& .selected-files-list {
-			display: flex;
-			flex-direction: row;
-			flex-wrap: wrap;
-			align-items: flex-start;
-
-			& span {
-				display: flex;
-				font-size: 12px;
-				border: 1px solid #7aff00;
-				background: rgba(6, 252, 129, 0.2392156863);
-				margin: 3px;
-				border-radius: 4px;
-				padding: 2px 8px;
-				align-items: center;
-			}
-
-			& .close-333 {
-				background: transparent;
-				font-size: 18px;
-				border: none;
-				font-weight: bold;
-				cursor: pointer;
-				color: black;
-				padding: 1px 7px;
-				transition: 500ms;
-
-				&:hover {
-					color: #ff0029;
-				}
-			}
-		}
-
-		& .drop-zone {
-			width: 100%;
-			height: 145px;
-			border: 2px #00000059 dashed;
-			border-radius: 10px;
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			flex-direction: column;
-			background: #05f20026;
-			cursor: pointer;
-
-			&.active {
-				animation: dropZoneAnim 300ms ease-in forwards infinite;
-				background-color: #05ff0052;
-			}
-
-			& input {
-				display: none;
-			}
-
-			& .sp-1 {
-				display: block;
-				font-size: 18px;
-				font-weight: 500;
-			}
-
-			& .sp-2 {
-				font-size: 20px;
-				font-weight: bold;
-				margin: 6px auto;
-				color: #8c8c8c;
-			}
-
-			& .btn-1 {
-				height: 40px;
-				width: 200px;
-				border-radius: 39px;
-				border: none;
-				background: #0062ff;
-				color: white;
-				font-size: 14px;
-				font-family: inherit;
-				cursor: pointer;
-			}
-		}
-
-		& h2 {
-			text-transform: uppercase;
-			font-size: 28px;
-			letter-spacing: 1px;
-		}
-
-		& p {
-			font-size: 14px;
-			font-weight: 400;
-		}
-
-		& form {
-			margin-top: 20px;
-		}
-
-		& .flex-yxz {
-			display: flex;
-			flex-wrap: wrap;
-			align-items: flex-end;
-			&.attachment {
-				display: block;
-			}
-
-			& .a03x {
-				display: flex;
-				flex-direction: column;
-				width: 48%;
-				margin-top: 15px;
-				margin-right: 20px;
-
-				&.full-w {
-					width: 100%;
-				}
-
-				& input,
-				& select {
-					height: 32px;
-					border: none;
-					border-bottom: 1px solid #5f5f5f52;
-					width: 92%;
-					background: none;
-					color: inherit;
-					&:active,
-					&:hover {
-						border-bottom-color: rgb(0, 255, 106);
-					}
-				}
-				& select {
-					cursor: pointer;
-					text-transform: uppercase;
-					& option {
-						background: var(--bg-color);
-						font-size: 14px;
-						text-transform: uppercase;
-					}
-				}
-				& input[type='checkbox'] {
-					width: 15px;
-					height: 15px;
-					cursor: pointer;
-				}
-				& textarea {
-					width: 100%;
-					border: none;
-					border-bottom: 2px solid #868686;
-					padding: 9px 12px;
-					font-size: 16px;
-					border-radius: 12px 12px 0 0;
-					min-height: 80px;
-					background: #f700a71a;
-					color: var(--primary-color);
-					font-family: inherit;
-					margin-top: 4px;
-				}
-				&.a03x-1 {
-					flex-direction: row;
-					align-items: center;
-					margin: 21px 0 4px 0;
-					& input[type='checkbox'] {
-						margin-right: 16px;
-					}
-				}
-			}
-
-			&.spec-items {
-				margin-bottom: 35px;
-				position: relative;
-				& label {
-					text-transform: uppercase;
-				}
-				& .a03x {
-					width: 31%;
-				}
-			}
-			&.number-sec {
-				& .a03x {
-					width: 173px;
-					margin-right: 43px;
-					& input[type='number'] {
-						border: 1px solid #7d7d7d40;
-						border-radius: 25px;
-						text-align: center;
-						padding: 0 10px;
-						margin-top: 6px;
-						height: 38px;
-					}
-				}
-			}
-		}
-		& input[type='submit'] {
-			width: 278px;
-			height: 50px;
-			margin: 22px auto 11px 0;
-			border-radius: 37px;
-			border: 2px solid #0c5493;
-			background: #0062ff;
-			color: white;
-			font-size: 14px;
-			font-weight: 500;
-			letter-spacing: 1px;
-			cursor: pointer;
-			&:hover {
-				background: #002dff;
-			}
-		}
-	}
-</style>
+	
+	</style>

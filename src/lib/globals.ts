@@ -248,3 +248,16 @@ export const getRandomColor = (
 	if (obj) return { backgroundColor, borderColor };
 	else return backgroundColor[0];
 };
+
+export const getRandomChar = (length:number, numbers = true, symbols=true) => {
+	let nchar:string = '';
+	let chars = 'hijabcdefgklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+	if(numbers) chars += "1234567890"
+	if(symbols) chars += "!~#@$%^&*()_+={}[])|:;?.]"
+	for(let i = 0; i < length; i++){
+		let r = Math.ceil(Math.random() * (chars.length - 1))
+		if(nchar === '') r = Math.ceil(Math.random() * 61)
+		nchar += chars[r]
+	}
+	return nchar
+}

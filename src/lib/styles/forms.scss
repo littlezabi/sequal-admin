@@ -1,0 +1,137 @@
+.form {
+		padding: 13px 57px;
+		margin-left: 0px;
+		& h2 {
+			text-transform: uppercase;
+			font-size: 28px;
+			letter-spacing: 1px;
+		}
+
+		& p {
+			font-size: 14px;
+			font-weight: 400;
+		}
+
+		& form {
+			margin-top: 20px;
+		}
+
+		& .flex-yxz {
+			display: flex;
+			flex-wrap: wrap;
+			align-items: flex-end;
+			& .a03x {
+				display: flex;
+				flex-direction: column;
+				width: 48%;
+				margin-top: 15px;
+				margin-right: 20px;
+
+				&.full-w {
+					width: 100%;
+				}
+
+				& input,
+				& select {
+					height: 32px;
+					border: none;
+					border-bottom: 1px solid #5f5f5f52;
+					width: 92%;
+					background: none;
+					color: inherit;
+					&:active,
+					&:hover {
+						border-bottom-color: rgb(0, 255, 106);
+					}
+				}
+				& select {
+					cursor: pointer;
+					text-transform: uppercase;
+					& option {
+						color: var(--primary-color);
+						background: var(--bg-color);
+						font-size: 14px;
+						text-transform: uppercase;
+					}
+				}
+				& input[type='checkbox'] {
+					width: 15px;
+					height: 15px;
+					cursor: pointer;
+				}
+				& input[type="radio"]{
+					width: 12px;
+					height: 12px;
+					margin-right: 13px;
+				}
+				& textarea {
+					width: 100%;
+					border: none;
+					border-bottom: 2px solid #868686;
+					padding: 9px 12px;
+					font-size: 16px;
+					border-radius: 12px 12px 0 0;
+					min-height: 80px;
+					background: #f700a71a;
+					color: var(--primary-color);
+					font-family: inherit;
+					margin-top: 4px;
+				}
+				&.a03x-1 {
+					flex-direction: row;
+					align-items: center;
+					margin: 21px 0 4px 0;
+					& input[type='checkbox'] {
+						margin-right: 16px;
+					}
+				}
+			}
+
+			&.spec-items {
+				margin-bottom: 35px;
+				position: relative;
+				& label {
+					text-transform: uppercase;
+				}
+				& .a03x {
+					width: 31%;
+				}
+			}
+			&.number-sec {
+				& .a03x {
+					width: 173px;
+					margin-right: 43px;
+				}
+			}
+		}
+		& input[type='submit'],
+		button.btn {
+			width: 278px;
+			height: 50px;
+			margin: 22px auto 11px 0;
+			border-radius: 37px;
+			border: 2px solid #0c5493;
+			background: #0062ff;
+			color: white;
+			font-size: 14px;
+			font-weight: 500;
+			letter-spacing: 1px;
+			cursor: pointer;
+			&:hover {
+				background: #002dff;
+			}
+			&.btn-small{
+				width: 117px;
+				height: 42px;
+				margin-left: 15px;
+				background: #ff0089;
+				border-color: #ff3b00;
+				letter-spacing:0;
+				&:hover{
+					background: #0062ff;
+					border-color: #0c5493;
+				}
+			}
+		}
+	}
+
