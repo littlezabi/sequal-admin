@@ -1,3 +1,4 @@
+import jwt from 'jsonwebtoken';
 import { getRandomChar } from '$lib/globals.js';
 import { Admin, Users } from '$lib/models.js';
 import { PUBLIC_IMAGES_STATIC_PATH } from '$env/static/public';
@@ -38,7 +39,8 @@ export const POST = async ({ request }: any) => {
 		console.log('form: ', form);
 		if(userType === 'admin'){
 			const admin = new Admin(form)
-			console.log('admin: ', admin)
+
+			admin.save()
 		}
 		console.log('done');
 	}
