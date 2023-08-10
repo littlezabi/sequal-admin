@@ -1,15 +1,24 @@
 <script lang="ts">
 	import { modal, modalUpdate, static_data, updateMessages } from '$lib/store';
-	import { Icon, User, XMark, Clipboard, ArrowPathRoundedSquare } from 'svelte-hero-icons';
+	import {
+		Icon,
+		User,
+		XMark,
+		Clipboard,
+		ArrowPathRoundedSquare,
+		CheckBadge
+	} from 'svelte-hero-icons';
+
 	import Loading from './loading.svelte';
 	import axios from 'axios';
 	import { onMount } from 'svelte';
 	import { getRandomChar } from '$lib/globals';
 	import { fade } from 'svelte/transition';
-
+	import { redirect } from '@sveltejs/kit';
+	onMount(() => {});
 	let countries: any = [];
-	let admin = false;
-	const userObject: any = {
+	let admin: any = false;
+	let userObject: any = {
 		firstname: '',
 		lastname: '',
 		username: '',
@@ -26,6 +35,8 @@
 	const handleClose = () => {
 		modalUpdate({ visible: false });
 		document.querySelector('body')?.classList.remove('modal-open');
+		redirect(302, '/users')
+		
 	};
 	const handleImage = (file: any) => {
 		const image = file.target.files[0];
@@ -46,7 +57,6 @@
 				.catch((e) => console.error(e))
 	);
 	const handleForm = async (e: Event) => {
-		console.log(userObject);
 		if (userObject.email === '')
 			updateMessages({ message: 'Enter user email address.', variant: 'alert' });
 		else if (admin && userObject.username === '') {
@@ -66,33 +76,57 @@
 		else if (userObject.password === '' || userObject.password !== userObject.re_password)
 			updateMessages({ message: 'Password not matched.', variant: 'alert' });
 		else {
-			if (admin) {
-				delete userObject.firstname;
-				delete userObject.lastname;
-				delete userObject.notifyme;
-				delete userObject.country;
-				userObject.userType = 'admin';
-			} else {
-				delete userObject.username;
-				userObject.userType = 'client';
-			}
-			let form = new FormData();
-			Object.keys(userObject).map((e: string) => {
-				form.append(e, userObject[e]);
-			});
-			form.append('profileWidth', $static_data.settings.UserProfilePictureWidth ?? 300);
-			form.append('postKey', 'adduser-1');
-			await axios
-				.post('/api/set-items', form)
-				.then((e) => {
-					console.log(e.data);
-				})
-				.catch((e) => console.log(e));
+			sendPost();
 		}
+	};
+	const sendPost = async () => {
+		if (admin) {
+			delete userObject.firstname;
+			delete userObject.lastname;
+			delete userObject.notifyme;
+			delete userObject.country;
+			userObject.userType = 'admin';
+		} else {
+			delete userObject.username;
+			userObject.userType = 'client';
+		}
+		let form = new FormData();
+		Object.keys(userObject).map((e: string) => {
+			form.append(e, userObject[e]);
+		});
+		form.append('profileWidth', $static_data.settings.UserProfilePictureWidth ?? 300);
+		form.append('postKey', 'adduser-1');
+		await axios
+			.post('/api/set-items', form)
+			.then((e) => {
+				let res = e.data;
+				if (res.success) {
+					updateMessages({
+						message: `New user as ${userObject.userType} is added successfully!`,
+						variant: res.success ? 'success' : 'alert'
+					});
+					userObject = {
+						firstname: '',
+						lastname: '',
+						username: '',
+						email: '',
+						avatar: '',
+						notifyme: true,
+						active: true,
+						country: '',
+						userType: 'client',
+						password: '',
+						re_password: ''
+					};
+				} else {
+					updateMessages({ message: res.message, variant: res.success ? 'success' : 'alert' });
+				}
+			})
+			.catch((e) => console.log(e));
 	};
 	const setRandom = () => {
 		let q = document.getElementById('gen-random') as HTMLInputElement;
-		if (q) q.value = getRandomChar(10);
+		if (q) q.value = getRandomChar(10, {symbols:true});
 	};
 	const copyPassword = () => {
 		let q = document.getElementById('gen-random') as HTMLInputElement;
@@ -108,15 +142,32 @@
 			e.target?.name === 'notifyme' || e.target?.name === 'active'
 				? e.target?.checked
 				: e.target?.value);
-	const handleUsername = (e: Event) => {
+	let userNameCheck: any = undefined;
+	const handleUsername = async (e: Event) => {
 		const value = (e.target as HTMLInputElement).value;
 		if (/[^\w\s]/.test(value)) {
 			console.log('symobls found...');
 			updateMessages({ message: 'special character found! please remove it', variant: 'danger' });
+			return 0;
 		} else {
 			updateMessages(false);
+			if (userNameCheck) clearTimeout(userNameCheck);
+			userNameCheck = setTimeout(async () => {
+				await axios
+					.get('/api/get-items/', { params: { checkUsername: 1, username: value } })
+					.then((res) => {
+						console.log(res.data.exist);
+						if (res.data.exist) {
+							admin = { message: 'username exist choose another!', condition: -1 };
+						} else {
+							admin = { message: 'Good!', condition: 1 };
+							userObject.username = value;
+						}
+					})
+					.catch((e) => console.error(e));
+			}, 1000);
+			return 1;
 		}
-		userObject.username = value;
 		// addInput
 	};
 </script>
@@ -165,7 +216,7 @@
 					<div class="a03x a03x-1">
 						<input
 							type="radio"
-							on:change={() => (admin = true)}
+							on:change={() => (admin = { message: 'Enter a unique name', condition: 0 })}
 							name="userType"
 							id="userType_admin"
 							value="userType_admin"
@@ -189,6 +240,18 @@
 								required
 							/>
 						</div>
+						{#if admin}
+							<span
+								style="display:flex; align-items:center;"
+								class="alert-inline {admin.condition === 1 ? 'success' : 'error'}"
+								id="username-alert"
+							>
+								{admin.message}
+								{#if admin.condition === 1}
+									<Icon src={CheckBadge} style="color: lightgreen; margin-left: 8px;" />
+								{/if}
+							</span>
+						{/if}
 					</div>
 				{:else}
 					<div class="flex-yxz">
@@ -243,7 +306,7 @@
 								name="gen-random"
 								id="gen-random"
 								placeholder="generate a random password"
-								value={getRandomChar(10)}
+								value={getRandomChar(10, {symbols:true})}
 							/>
 							<button
 								class="btn btn-small"
@@ -359,6 +422,17 @@
 </div>
 
 <style lang="scss">
+	.alert-inline {
+		display: block;
+		width: 222px;
+		font-size: 13px;
+		&.success {
+			color: rgb(var(--color-success));
+		}
+		&.error {
+			color: rgb(var(--color-danger));
+		}
+	}
 	.sup-a9ckq {
 		margin-top: -17px;
 		margin-left: 22px;

@@ -124,21 +124,16 @@ export const life = (__time__: string) => {
 		}
 	};
 };
-export const trimTitle = (
-	title: string,
-	minchars = 20,
-	lastchars = 7,
-	midchars = "..."
-  ) => {
+export const trimTitle = (title: string, minchars = 20, lastchars = 7, midchars = '...') => {
 	const _len = title.length;
 	if (_len < minchars) return title;
-	let _ = "";
+	let _ = '';
 	if (_len > minchars + lastchars) {
-	  _ = title.substring(0, minchars);
-	  _ = _ + midchars + title.substring(_len - lastchars, _len);
+		_ = title.substring(0, minchars);
+		_ = _ + midchars + title.substring(_len - lastchars, _len);
 	} else _ = title;
 	return _;
-  };
+};
 export const chartDatasetOptions = () => {
 	return {
 		backgroundColor: bg40Colors,
@@ -149,11 +144,11 @@ export const chartDatasetOptions = () => {
 };
 
 export const setUserCharName = (name: string) => {
-  const k = name.split(" ");
-  let n = "";
-  k.map((e, i) => e ? (i < 2 ? (n += e[0]) : "") : '');
-  if (n === "") n = name[0];
-  return n.toUpperCase();
+	const k = name.split(' ');
+	let n = '';
+	k.map((e, i) => (e ? (i < 2 ? (n += e[0]) : '') : ''));
+	if (n === '') n = name[0];
+	return n.toUpperCase();
 };
 export const chartOptions = (title: any, xaxis: any, yaxis: any): {} => {
 	return {
@@ -249,15 +244,36 @@ export const getRandomColor = (
 	else return backgroundColor[0];
 };
 
-export const getRandomChar = (length:number, numbers = true, symbols=true) => {
-	let nchar:string = '';
+const rand_options = {
+	numbers: true,
+	symbols: false,
+	separator: false,
+	segment: 5,
+	uppercase: false,
+	lowercase: false
+};
+export const getRandomChar = (
+	length: number,
+	options: {
+		numbers?: boolean;
+		symbols?: boolean;
+		separator?: boolean | string;
+		segment?: number;
+		uppercase?: boolean;
+		lowercase?: boolean;
+	} = rand_options
+) => {
+	options = { ...rand_options, ...options };
+	let nchar: string = '';
 	let chars = 'hijabcdefgklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
-	if(numbers) chars += "1234567890"
-	if(symbols) chars += "!~#@$%^&*()_+={}[])|:;?.]"
-	for(let i = 0; i < length; i++){
-		let r = Math.ceil(Math.random() * (chars.length - 1))
-		if(nchar === '') r = Math.ceil(Math.random() * 61)
-		nchar += chars[r]
+	if (options.numbers) chars += '1234567890';
+	if (options.symbols) chars += '!~#@$%^&*()_+={}[])|:;?.]';
+	for (let i = 0; i < length; i++) {
+		let r = Math.ceil(Math.random() * (chars.length - 1));
+		if (options.separator && options.segment)
+			if (i % options.segment === 0 && i !== 0 && i < length) nchar += options.separator;
+		if (nchar === '') r = Math.ceil(Math.random() * 61);
+		nchar += chars[r];
 	}
-	return nchar
-}
+	return options.uppercase ? nchar.toUpperCase() : options.lowercase ? nchar.toLowerCase() : nchar;
+};

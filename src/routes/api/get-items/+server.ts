@@ -49,6 +49,9 @@ export const GET = async ({ url }: any) => {
 	if (url.searchParams.get('getCountries'))
 		return new Response(JSON.stringify(countries), { status: 200 });
 
+	if (url.searchParams.get('checkUsername')) {
+		return new Response(JSON.stringify({exist: await Admin.findOne({username: url.searchParams.get('username')}, {username:1}) ? 1 : 0}), {status: 200})
+	}
 	if (url.searchParams.get('smart_device')) {
 		let cats = [];
 		const item: any = await smartModel.findOne(

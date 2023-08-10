@@ -43,7 +43,7 @@ const SettingsSchema = new mongoose.Schema(
 		active: { type: Boolean, default: true },
 		oneTimeAdminLoginKey: {
 			type: String,
-			default: getRandomChar(100)
+			default: getRandomChar(100, {})
 		}, 
 		UserProfilePictureWidth: {type: Number, default: 320, required: true}
 	},
