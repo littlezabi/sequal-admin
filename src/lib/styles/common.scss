@@ -167,7 +167,24 @@ h2 span svg {
     width: 40px;
     color: #433e9b;
 }
-
+.btn-stylish.active {
+    background: #4b7aff !important;
+    border-color: #6fb2ff !important;
+    & div{
+        background: radial-gradient(#c9c9c9, #ffffff) !important;
+        margin-left: 52%;
+    }
+}
+svg, img {
+    &.list-image {
+        border: 2px solid var(--svg-light);
+        border-radius: 50% !important;
+        padding: 7px;
+        width: 30px;
+        height: 30px;
+        object-fit: cover;
+    }
+}
 .reply-btn svg {
     color: #6a6868;
 }
@@ -188,7 +205,17 @@ svg.alert{
         width: 32px
     }
 }
-
+.message{
+    display: block;
+    font-size: 12px;
+    color: rgb(var(--color-success));
+    &.alert {
+        color: rgb(var(--color-alert));
+    }
+    &.danger {
+        color: rgb(var(--color-danger));
+    }
+}
 .dash-icon {
     & svg {
         color: #E91E63;

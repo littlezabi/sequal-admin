@@ -8,6 +8,6 @@ export default defineConfig({
 	},
 	optimizeDeps: {
 		// Disable dynamic imports, which will disable HMR
-		include: ['@kurkle/color', 'svelte-hero-icons', 'chart.js', 'axios'], // Add other dependencies to exclude if needed
+		include: ['js-cookie', '@kurkle/color', 'svelte-hero-icons', 'chart.js', 'axios'], // Add other dependencies to exclude if needed
 	},
 });

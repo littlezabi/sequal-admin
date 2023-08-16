@@ -11,7 +11,8 @@
 		BellAlert,
 		Home
 	} from 'svelte-hero-icons';
-	import { themeStore, toggleTheme } from '../lib/store';
+	import { adminSession, themeStore, toggleTheme } from '../lib/store';
+	import { PUBLIC_IMAGES_FETCH_URI } from '$env/static/public';
 	const handleTheme = () => {
 		toggleTheme(null);
 		window.localStorage.setItem('theme', $themeStore === 'light' ? 'light' : 'dark');
@@ -56,12 +57,27 @@
 			</ul>
 			<ul>
 				<li>
-					<a href="/login">
+					<a href={$adminSession ? "/logout" : "/login"}>
 						<section class="profile flex">
-							<div class="flex">
-								<Icon class="user-icon" src={User} />
-							</div>
-							<span>LittleZabi</span>
+							{#if $adminSession.avatar && $adminSession.avatar !== ''}
+								<div class="image flex">
+									<img
+										src={$adminSession.avatar.includes('http')
+											? $adminSession.avatar
+											: PUBLIC_IMAGES_FETCH_URI + '/images/users/' + $adminSession.avatar}
+										alt=""
+									/>
+								</div>
+							{:else}
+								<div class="flex">
+									<Icon class="user-icon" src={User} />
+								</div>
+							{/if}
+							{#if $adminSession}
+								<span>{$adminSession.username}</span>
+							{:else}
+								<span>Sign In</span>
+							{/if}
 						</section>
 					</a>
 				</li>
@@ -76,6 +92,14 @@
 		margin-top: 9px;
 		& .profile {
 			cursor: pointer;
+			& .image {
+				overflow: hidden;
+				& img {
+					width: 100%;
+					height: 100%;
+					object-fit: cover;
+				}
+			}
 			& span {
 				font-size: 14px;
 			}

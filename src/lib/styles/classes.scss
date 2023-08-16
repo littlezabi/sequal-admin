@@ -26,3 +26,20 @@
     padding: 10px;
     border-radius: 5px;
 }
+.btn-stylish {
+    width: 58px;
+    height: 31px;
+    background-color: #a3a3a340;
+    border-radius: 27px;
+    border: 2px solid #0c5493;
+    padding: 1px;
+    margin: 0 8px;
+
+    & div {
+        width: 25px;
+        height: 25px;
+        border-radius: 50%;
+        background: radial-gradient(#065ced, #3a64f5);
+        transition: 300ms cubic-bezier(0.52, -0.45, 0.16, 0.55);
+    }
+}

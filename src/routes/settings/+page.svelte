@@ -24,7 +24,6 @@
     const handleForm = (element:any) => {
 		let e = element as HTMLInputElement
         for(let key of keys){
-			if(key === 'oneTimeAdminLoginKey') continue
             let v:string | number = ''
             if(element.target[key].type === 'number')
                 v = Number(element.target[key].value)
@@ -64,8 +63,6 @@
 									<a href="/information#deviceViewHeaderTextLength" target="_blank"> &#x2139; </a>
 								{:else if setting === 'maximumFilesAllowInImageTools' || setting === 'minimumFilesAllowInImageTools'}
 									(image batch size)
-								{:else if setting === 'oneTimeAdminLoginKey'}
-									(Admin key is not changable)
 								{:else if setting === 'mainCatPerCollLimit'}
 									(category per column)
 								{/if}
@@ -79,7 +76,6 @@
 								: 'text'}
 							class={typeof values[index] === 'number' ? 'number-input' : ''}
                             name={setting}
-							disabled={setting === 'oneTimeAdminLoginKey' ? true : false}
 							placeholder="Enter here..."
 							value={values[index]}
 							id={setting}

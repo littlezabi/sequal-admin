@@ -265,15 +265,16 @@ export const getRandomChar = (
 ) => {
 	options = { ...rand_options, ...options };
 	let nchar: string = '';
-	let chars = 'hijabcdefgklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+	let chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
 	if (options.numbers) chars += '1234567890';
 	if (options.symbols) chars += '!~#@$%^&*()_+={}[])|:;?.]';
 	for (let i = 0; i < length; i++) {
-		let r = Math.ceil(Math.random() * (chars.length - 1));
+		let r = Math.ceil(Math.random() * (chars.length - 2));
 		if (options.separator && options.segment)
 			if (i % options.segment === 0 && i !== 0 && i < length) nchar += options.separator;
 		if (nchar === '') r = Math.ceil(Math.random() * 61);
 		nchar += chars[r];
 	}
+	nchar = nchar.replaceAll('undefined', 'techokhan')
 	return options.uppercase ? nchar.toUpperCase() : options.lowercase ? nchar.toLowerCase() : nchar;
 };

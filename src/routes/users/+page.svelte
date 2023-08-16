@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { PageData } from './$types';
-	import { getRandomColor } from '$lib/globals';
+	import { getRandomColor, life } from '$lib/globals';
 	import {
 		Icon,
 		Photo,
@@ -11,53 +11,74 @@
 		BellAlert,
 		BellSlash,
 		User,
-		UserPlus
+		UserPlus,
+		Clock
 	} from 'svelte-hero-icons';
 	import { modal, modalUpdate } from '$lib/store';
 	import UserModal from '$compo/UserModal.svelte';
+	import { PUBLIC_IMAGES_FETCH_URI } from '$env/static/public';
 	export let data: PageData;
-	let users: any = JSON.parse(data.users);
 	let admins: any = JSON.parse(data.admins);
+	let clients: any = JSON.parse(data.users);
+	let admin_key:any = data.admin_key
+	let users:any = []
+	let old_action = 'clients';
+	if(data.view === 'admins'){
+		users = admins;
+		old_action = 'admins';
+	} 
+	else users = clients;
+
 	const sort = (by: any): any => {
 		let order = by.target.value.split('_').at(-1);
 		by = by.target.value.split('_')[0];
 		let comp_a = order === 'asc' ? 1 : -1;
 		let comp_b = order === 'desc' ? 1 : -1;
 		if (by === 'isActive') {
-			users = JSON.parse(data.users).sort((a: any, b: any) => {
+			users = JSON.parse(old_action==='clients' ? data.users : data.admins).sort((a: any, b: any) => {
 				if (!a.active && b.active) return comp_a;
 				if (a.active && !b.active) return comp_b;
 				return 0;
 			});
 		} else if (by === 'createdAt')
-			users = JSON.parse(data.users).sort(
-				(a: any, b: any) => {
-					let x:any = new Date(a.createdAt)
-					let y:any = new Date(b.createdAt)
-					return x - y
-				}
-			);
+			users = JSON.parse(old_action==='clients' ? data.users : data.admins).sort((a: any, b: any) => {
+				let x: any = new Date(a.createdAt);
+				let y: any = new Date(b.createdAt);
+				return x - y;
+			});
 		else
-			users = JSON.parse(data.users).sort((a: any, b: any) => {
+			users = JSON.parse(old_action==='clients' ? data.users : data.admins).sort((a: any, b: any) => {
 				if (a[by] > b[by]) return comp_a;
 				if (a[by] < b[by]) return comp_b;
 				else return 0;
 			});
 	};
 	const handleEdit = (item: any) => {
-		modalUpdate({ visible: true, ...item });
+		modalUpdate({ visible: true, title:"EDIT USER PROFILE", action: 'edit', admin_key, user: item });
+	};
+	const handleStylishButton = (action: string) => {
+		if (old_action === action) return 0;
+		if (action === 'clients') {
+			users = clients;
+		} else {
+			users = admins;
+		}
+		console.log(users);
+		old_action = action;
 	};
 </script>
 
 {#if $modal.visible}
 	<UserModal />
 {/if}
-<h2>Users</h2>
+<h2>Manage Users</h2>
 <div class="mobile-view-list">
 	<div class="head">
-		<p>Change mobile and watches setting</p>
+		<p>You can add, remove, update users and admins.</p>
 		<div>
-			<button class="btn flex" on:click={() => modalUpdate({ visible: true, new: 1, title: 'Add a new user' })}
+			<button
+				class="btn flex"
+				on:click={() => modalUpdate({ visible: true, action: 'new', title: 'Add a new user' })}
 				><span>ADD NEW USER</span> <Icon src={UserPlus} /></button
 			>
 		</div>
@@ -75,6 +96,31 @@
 			</select>
 		</span>
 	</div>
+	<div class="head">
+		<div class="flex">
+			<div class="flex">
+				<span>All clients</span>
+				<button
+					class="btn-stylish {old_action === 'clients' ? 'active' : ''}"
+					id="btn-8ck3lx"
+					on:click={(e) => handleStylishButton('clients')}
+				>
+					<div />
+				</button>
+			</div>
+
+			<div class="flex" style="margin-left: 30px;">
+				<span>All admins</span>
+				<button
+					class="btn-stylish {old_action === 'admins' ? 'active' : ''}"
+					id="btn-8ck3lx2"
+					on:click={(e) => handleStylishButton('admins')}
+				>
+					<div />
+				</button>
+			</div>
+		</div>
+	</div>
 	<div class="container">
 		<table>
 			<thead>
@@ -86,28 +132,39 @@
 							<span style="margin-left: 10px;">Avatar</span>
 						</div>
 					</th>
-					<th>
-						<div class="flex">
-							<Icon src={User} />
-							<span style="margin-left: 10px;">firstname</span>
-						</div>
-					</th>
-					<th>
-						<div class="flex">
-							<Icon src={User} />
-							<span style="margin-left: 10px;">lastname</span>
-						</div>
-					</th>
+					{#if old_action === 'clients'}
+						<th>
+							<div class="flex">
+								<Icon src={User} />
+								<span style="margin-left: 10px;">Fullname</span>
+							</div>
+						</th>
+					{:else}
+						<th>
+							<div class="flex">
+								<Icon src={User} />
+								<span style="margin-left: 10px;">Username</span>
+							</div>
+						</th>
+					{/if}
 					<th>
 						<div class="flex">
 							<Icon src={AtSymbol} />
 							<span style="margin-left: 10px;">Email</span>
 						</div>
 					</th>
+					{#if old_action === 'clients'}
+						<th>
+							<div class="flex">
+								<Icon src={Bell} />
+								<span style="margin-left: 10px;">Notify</span>
+							</div>
+						</th>
+					{/if}
 					<th>
 						<div class="flex">
-							<Icon src={Bell} />
-							<span style="margin-left: 10px;">Notify</span>
+							<Icon src={Clock} />
+							<span style="margin-left: 10px;">created</span>
 						</div>
 					</th>
 					<th>
@@ -122,18 +179,36 @@
 				{#each users as item}
 					<tr class="item-section list" style={`background: ${getRandomColor(0.1)}`}>
 						<td class="item-index">{item.index}</td>
-						<td>
-							<img src={item.avatar} alt={item.firstname} />
-						</td>
-						<td class="item-name">{item.firstname}</td>
-						<td class="item-name">{item.lastname}</td>
-						<td class="item-cat">{item.email}</td>
-						<td>
-							{#if item.notifyme}
-								<Icon src={BellAlert} />
+						<td style="text-align:center;">
+							{#if item.avatar && item.avatar !== ''}
+								<img
+									class="list-image"
+									src={item.avatar.includes('http')
+										? item.avatar
+										: PUBLIC_IMAGES_FETCH_URI + 'images/users/' + item.avatar}
+									alt={item.firstname}
+								/>
 							{:else}
-								<Icon src={BellSlash} />
+								<Icon class="list-image" src={User} />
 							{/if}
+						</td>
+						{#if old_action === 'clients'}
+							<td class="item-name">{item.firstname} {item.lastname}</td>
+						{:else}
+							<td class="item-name">{item.username}</td>
+						{/if}
+						<td class="item-cat">{item.email}</td>
+						{#if old_action === 'clients'}
+							<td>
+								{#if item.notifyme}
+									<Icon src={BellAlert} />
+								{:else}
+									<Icon src={BellSlash} />
+								{/if}
+							</td>
+						{/if}
+						<td>
+							{life(item.createdAt).from()}
 						</td>
 						<button on:click={() => handleEdit(item)}><Icon src={Wrench} /></button>
 					</tr>
@@ -148,28 +223,39 @@
 							<span style="margin-left: 10px;">Avatar</span>
 						</div>
 					</th>
-					<th>
-						<div class="flex">
-							<Icon src={User} />
-							<span style="margin-left: 10px;">firstname</span>
-						</div>
-					</th>
-					<th>
-						<div class="flex">
-							<Icon src={User} />
-							<span style="margin-left: 10px;">lastname</span>
-						</div>
-					</th>
+					{#if old_action === 'clients'}
+						<th>
+							<div class="flex">
+								<Icon src={User} />
+								<span style="margin-left: 10px;">Fullname</span>
+							</div>
+						</th>
+					{:else}
+						<th>
+							<div class="flex">
+								<Icon src={User} />
+								<span style="margin-left: 10px;">Username</span>
+							</div>
+						</th>
+					{/if}
 					<th>
 						<div class="flex">
 							<Icon src={AtSymbol} />
 							<span style="margin-left: 10px;">Email</span>
 						</div>
 					</th>
+					{#if old_action === 'clients'}
+						<th>
+							<div class="flex">
+								<Icon src={Bell} />
+								<span style="margin-left: 10px;">Notify</span>
+							</div>
+						</th>
+					{/if}
 					<th>
 						<div class="flex">
-							<Icon src={Bell} />
-							<span style="margin-left: 10px;">Notify</span>
+							<Icon src={Clock} />
+							<span style="margin-left: 10px;">created</span>
 						</div>
 					</th>
 					<th>
@@ -185,6 +271,11 @@
 </div>
 
 <style lang="scss">
+	.list-image {
+		width: 69px;
+		height: 69px;
+		padding: 0;
+	}
 	h2 {
 		color: var(--primary-color);
 	}

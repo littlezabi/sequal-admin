@@ -16,7 +16,7 @@ export const mobileList = async (startIndex:number=0, limit:number=20) => {
 };
 
 export const getSettings = async ()=>{
-	return await Settings.findOne({}, {cookiesOptions: 0, updatedAt: 0});
+	return await Settings.findOne({}, {cookiesOptions: 0, oneTimeAdminLoginKey:0, updatedAt: 0});
 }
 export const getUsers = async (startIndex:number = 0, limit:number = 20)=>{
 	const users = await Users.find().skip(startIndex).limit(limit).sort('-_id').lean();

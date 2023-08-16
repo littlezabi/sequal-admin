@@ -19,6 +19,14 @@
 	onMount(() => {
 		toggleTheme(window.localStorage.getItem('theme'));
 	});
+	let closingModalInterval: any = undefined;
+	$: $messages, closeModal();
+	const closeModal = () => {
+		if (closingModalInterval) clearTimeout(closingModalInterval);
+		closingModalInterval = setTimeout(() => {
+			updateMessages();
+		}, 5000);
+	};
 </script>
 
 <div id="main-container" class:dark={$themeStore === 'dark'}>

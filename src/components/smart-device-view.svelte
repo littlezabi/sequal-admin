@@ -44,13 +44,25 @@
 		'headers'
 	];
 	let dataFrame: any = {};
-	const postDataframe = async ()=>{
-		await axios.post('/api/set-items', dataFrame).then(response => {
-			console.log(response.data)
-		}).catch(e => {
-			console.log('error: ', e)
-		})
-	}
+	const postDataframe = async () => {
+		const newDF = dataFrame;
+		const form = new FormData();
+		form.append('_id', dataFrame._id);
+		if (dataFrame.images)
+			dataFrame.images.forEach((e: File, i: number) => form.append(`image-${i}`, e));
+		delete newDF.images;
+		delete newDF._id;
+		form.append('df', JSON.stringify(newDF));
+		form.append('postKey', 'updateMobileDevice');
+		await axios
+			.post('/api/update-items', form)
+			.then((response) => {
+				console.log(response.data);
+			})
+			.catch((e) => {
+				console.log('error: ', e);
+			});
+	};
 	const headersToString = (sep = '\n') => {
 		headers = '';
 		dataFrame.headers.map((e: string, i: number) => {
@@ -164,7 +176,8 @@
 		let inputs = document.querySelectorAll('#dataframe-form input');
 		let specsTitle = document.querySelectorAll('#dataframe-form .spec-item-title');
 		let titles: any = {};
-		for (const title of specsTitle) {
+		for (const t of specsTitle) {
+			const title: any = t;
 			let original: any = title.getAttribute('data-original');
 			if (original) titles[original] = title.innerText.toLowerCase().trim();
 		}
@@ -189,14 +202,16 @@
 				delete dataFrame[key];
 			}
 		});
-		dataFrame['description'] = document.querySelector('#dataframe-form #description')?.value;
-		dataFrame['category'] = document.querySelector('#dataframe-form #category')?.value;
+		const k = document.querySelector('#dataframe-form #description') as any;
+		let c = document.querySelector('#dataframe-form #category') as any;
+		if (k) dataFrame['description'];
+		if (c) dataFrame['category'] = c.value;
 		item_specs = Object.keys(dataFrame).filter((e) => (item_specs_exclude.includes(e) ? null : e));
 		item_specs = item_specs.sort();
 		dataFrame.loves = loves;
 		dataFrame.rating = rating;
 		dataFrame.views = views;
-		postDataframe()
+		postDataframe();
 	};
 	const handleAddNewSpec = () => {
 		const spec_title: any = document.getElementById('new-spec-title');
@@ -205,7 +220,10 @@
 		updateMessages({ message: false });
 		if (spec_title.value !== '') {
 			if (Object.keys(dataFrame).includes(spec_title.value.toLowerCase()))
-				updateMessages({ message: 'Specification title is already exist!', variant: 'alert' });
+				updateMessages({
+					message: 'Specification title is already exist!',
+					variant: 'alert'
+				});
 			else if (spec_name.value !== '') {
 				if (spec_value.value !== '') {
 					dataFrame[spec_title.value] = [{ [spec_name.value]: spec_value.value }];
@@ -213,8 +231,15 @@
 					spec_title.value = '';
 					spec_name.value = '';
 					spec_value.value = '';
-					updateMessages({ message: 'New specification added successfully!', variant: 'success' });
-				} else updateMessages({ message: 'Add value of new specification.', variant: 'danger' });
+					updateMessages({
+						message: 'New specification added successfully!',
+						variant: 'success'
+					});
+				} else
+					updateMessages({
+						message: 'Add value of new specification.',
+						variant: 'danger'
+					});
 			} else updateMessages({ message: 'Add name of new specification.', variant: 'danger' });
 		} else updateMessages({ message: 'Add a title of new specification.', variant: 'danger' });
 	};
@@ -236,7 +261,10 @@
 			});
 			return 0;
 		}
-		const value = document?.getElementById(id)?.value;
+		let value: null | HTMLElement | string = document.getElementById(id);
+		if (value instanceof HTMLInputElement || value instanceof HTMLTextAreaElement)
+			value = value.value;
+
 		if (dataFrame.headers.includes(value)) {
 			updateMessages({
 				message: `(${value}) already exist on headers.`,
@@ -266,6 +294,25 @@
 			return 0;
 		}
 	};
+	const __cxd = (e: Event): void => {
+		if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+			if (e.target.name === 'new-key') newSpecItem = { ...newSpecItem, key: e.target.value };
+			if (e.target.name === 'spec-value') newSpecItem = { ...newSpecItem, value: e.target.value };
+		}
+	};
+	const __ixq = (): void => {
+		const element = document.querySelector('#phone-image') as HTMLElement;
+		element.click();
+	};
+
+	const __npc = (e: Event): void => {
+		if (e.target instanceof HTMLInputElement) {
+			if(e.target.name === 'is-active')
+				dataFrame.isActive = e.target?.checked;
+			else
+				dataFrame.isNew = e.target?.checked;
+		}
+	};
 </script>
 
 <div class="modal">
@@ -290,9 +337,7 @@
 									id="new-key"
 									value={newSpecItem.key ?? ''}
 									placeholder="E.g. Screen width"
-									on:change={(e) => {
-										newSpecItem = { ...newSpecItem, key: e.target?.value };
-									}}
+									on:change={__cxd}
 									required
 								/>
 							</div>
@@ -304,9 +349,7 @@
 									id="spec-value"
 									value={newSpecItem.value ?? ''}
 									placeholder="E.g 720 pixels"
-									on:change={(e) => {
-										newSpecItem = { ...newSpecItem, value: e.target?.value };
-									}}
+									on:change={__cxd}
 								/>
 							</div>
 						</div>
@@ -417,10 +460,7 @@
 						{#if loading}
 							<Loading />
 						{:else}
-							<div
-								class="add-image"
-								on:mousedown={() => document.querySelector('#phone-image')?.click()}
-							>
+							<div class="add-image" on:mousedown={__ixq}>
 								<Icon src={Photo} />
 								<span>Click to add image's</span>
 							</div>
@@ -567,7 +607,7 @@
 					<div class="a03x a03x-1">
 						<input
 							type="checkbox"
-							on:change={(e) => (dataFrame.isActive = e.target?.checked)}
+							on:change={__npc}
 							name="is-active"
 							id="is-active"
 							checked={item.isActive}
@@ -579,7 +619,7 @@
 							type="checkbox"
 							name="is-new"
 							id="is-new"
-							on:change={(e) => (dataFrame.isNew = e.target?.checked)}
+							on:change={__npc}
 							checked={item.isNew}
 						/>
 						<label for="is-new">ITEM IS NEW <small>(toggle to item as new)</small></label>
@@ -609,5 +649,4 @@
 </div>
 
 <style lang="scss">
-	
-	</style>
+</style>
