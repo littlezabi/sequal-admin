@@ -38,7 +38,7 @@ export const countCategories = async () => {
 		{ _id: 0, firstname: 1, lastname: 1, email: 1,  avatar: 1, country: 1, createdAt: 1 }
 	)
 		.sort({ views: -1 })
-		.limit(7)
+		.limit(10)
 		.lean();
 
 	let lastReviews = await reviewsModel

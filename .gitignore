@@ -10,3 +10,4 @@ node_modules_win.zip
 !.env.example
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+*.zip

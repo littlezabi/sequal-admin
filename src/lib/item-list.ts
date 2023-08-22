@@ -1,18 +1,21 @@
 import database from './database';
-import { Admin, Settings, Users, smartModel } from '$lib/models';
+import { Admin, Settings, Users, categoriesModel, smartModel } from '$lib/models';
 
 await database.connect();
 const projectSmart = {
 	title: 1,
 	category: 1,
-	image: 1,
+	images: 1,
 	integrity: 1,
 	createdAt: 1,
 	isActive: 1
 };
+export const getCategories = async (skip:number=0, limit:number=20)=>{
+	return await categoriesModel.find().skip(skip).limit(limit).sort('-_id')
+}
 export const mobileList = async (startIndex:number=0, limit:number=20) => {
-	const list = await smartModel.find({}, projectSmart ).skip(startIndex).limit(limit).lean();
-    return list.map((e:any, i:number) => {return {...e, index: ++i + startIndex}})
+	const list = await smartModel.find({}, projectSmart ).skip(startIndex).limit(limit).sort("-_id").lean();
+    return list.map((e:any, i:number) => {return {...e, images: e.images.length > 1 ? [e.images[0]] : e.images, index: ++i + startIndex}})
 };
 
 export const getSettings = async ()=>{

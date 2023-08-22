@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { PageData } from './$types';
-	import { PUBLIC_IMAGES_FETCH_URI } from '$env/static/public';
+	import { PUBLIC_IMAGES_FETCH_URI, PUBLIC_PHONE_IMAGE_FOLDER } from '$env/static/public';
 	import { getRandomColor, life } from '$lib/globals';
 	import {
 		Icon,
@@ -14,7 +14,9 @@
 		Photo,
 		QueueList,
 		Wrench,
-		Cog6Tooth
+		Cog6Tooth,
+		DevicePhoneMobile,
+		Plus
 	} from 'svelte-hero-icons';
 	import { modal, modalUpdate } from '$lib/store';
 	import SmartDeviceView from '$compo/smart-device-view.svelte';
@@ -37,7 +39,7 @@
 				const y: any = new Date(b.createdAt);
 				return x - y;
 			});
-		 else
+		else
 			items = data.list.sort((a: any, b: any) => {
 				if (a[by] > b[by]) return comp_a;
 				if (a[by] < b[by]) return comp_b;
@@ -45,7 +47,7 @@
 			});
 	};
 	const handleEdit = (item: any) => {
-		modalUpdate({ visible: true, ...item });
+		modalUpdate({ visible: true, ...item, action:'edit' });
 	};
 </script>
 
@@ -56,19 +58,39 @@
 <div class="mobile-view-list">
 	<div class="head">
 		<p>Change mobile and watches setting</p>
+		<div>
+			<button
+				class="btn flex"
+				on:click={() =>
+					modalUpdate({ visible: true, action: 'new', title: 'Add new mobile device' })}
+			>
+				<span>NEW DEVICE</span>
+				<Icon src={Plus} />
+			</button>
+		</div>
 		<span>
 			Sort By
 			<select class="sort-select" on:change={(e) => sort(e)}>
-				<option value="index_asc">Number Asc</option>
-				<option value="index_desc">Number Desc</option>
-				<option value="isActive_asc">Active</option>
-				<option value="isActive_desc">Deactive</option>
-				<option value="title_asc">Title Asc</option>
-				<option value="title_desc">Title Desc</option>
-				<option value="category_asc">Category Asc</option>
-				<option value="category_desc">Category Desc</option>
-				<option value="createdAt_asc">Date Asc</option>
-				<option value="createdAt_desc">Date Desc</option>
+				<optgroup label="By Index">
+					<option value="index_asc">Ascending</option>
+					<option value="index_desc">Descending</option>
+				</optgroup>
+				<optgroup label="By Activeness">
+					<option value="isActive_asc">Active</option>
+					<option value="isActive_desc">Deactive</option>
+				</optgroup>
+				<optgroup label="By Title">
+					<option value="title_asc">Ascending</option>
+					<option value="title_desc">Descending</option>
+				</optgroup>
+				<optgroup label="By Category">
+					<option value="category_asc">Ascending</option>
+					<option value="category_desc">Descending</option>
+				</optgroup>
+				<optgroup label="By Date">
+					<option value="createdAt_asc">Ascending</option>
+					<option value="createdAt_desc">Descending</option>
+				</optgroup>
 			</select>
 		</span>
 	</div>
@@ -110,7 +132,16 @@
 			<section class="item-section list" style={`background: ${getRandomColor(0.1)}`}>
 				<span class="item-index">{item.index}</span>
 				<span>
-					<img src={PUBLIC_IMAGES_FETCH_URI + item.image} alt={item.title} />
+					{#if item.images.length}
+						<img
+							src={item.images[0].includes('http')
+								? item.images[0]
+								: PUBLIC_IMAGES_FETCH_URI + PUBLIC_PHONE_IMAGE_FOLDER + item.images[0]}
+							alt={item.title}
+						/>
+					{:else}
+						<Icon style="width: 42px !important" src={DevicePhoneMobile} />
+					{/if}
 				</span>
 				<span class="item-name">{item.title}</span>
 				<span class="item-cat">{item.category}</span>

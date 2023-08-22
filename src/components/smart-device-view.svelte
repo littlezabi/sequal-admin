@@ -1,20 +1,35 @@
 <script lang="ts">
 	import axios from 'axios';
-	import { Icon, Photo, Plus, XMark } from 'svelte-hero-icons';
+	import {
+		ArrowUturnLeft,
+		ChevronLeft,
+		ChevronRight,
+		Icon,
+		Minus,
+		Photo,
+		Plus,
+		Trash,
+		XMark
+	} from 'svelte-hero-icons';
 	import { modal, modalUpdate, static_data, updateMessages, updateStaticData } from '$lib/store';
-	import { PUBLIC_IMAGES_FETCH_URI } from '$env/static/public';
+	import { PUBLIC_IMAGES_FETCH_URI, PUBLIC_PHONE_IMAGE_FOLDER } from '$env/static/public';
 	import { life, numberFormat } from '$lib/globals';
 	import Loading from './loading.svelte';
 	import { fade } from 'svelte/transition';
 	import CustomNumberInput from './custom-number-input.svelte';
-	let loading = true;
+	let message: any = false;
+	$: message, updateMessages(message);
 	let item = $modal;
 	let loves: number = 0;
 	let views: number = 0;
 	let rating: number = 0;
 	let headers: string = '';
-	$: $modal, (item = $modal), getItem($modal._id);
+	// let loading = $modal.action === 'new' ? false : true;
+	let loading = false;
 	let cats: [] | any = $static_data.categories;
+	$: $modal,
+		(item = $modal), getItem($modal.action === 'new' ? 0 : $modal._id);
+		
 	document.querySelector('body')?.classList.add('modal-open');
 	const handleClose = () => {
 		modalUpdate({ visible: false });
@@ -22,12 +37,13 @@
 	};
 	let filesList: any = [];
 	let item_specs: any = [];
+	const objectsToDelete: any = {};
 	let item_specs_exclude = [
 		'visible',
 		'_id',
 		'title',
 		'category',
-		'image',
+		'images',
 		'integrity',
 		'isActive',
 		'createdAt',
@@ -39,28 +55,51 @@
 		'rating',
 		'slug',
 		'original',
-		'isNew',
+		'is_new',
 		'updatedAt',
-		'headers'
+		'headers',
+		'removeImages',
+		'action',
+		'old_category'
 	];
-	let dataFrame: any = {};
-	const postDataframe = async () => {
+	let dataFrame: any = {
+		headers: [],
+		images: [],
+		keywords: '',
+		is_new: true,
+		isActive: true,
+		description: '',
+		slug: ''
+	};
+	const postDataframe = async (objectsToDelete: any) => {
 		const newDF = dataFrame;
 		const form = new FormData();
 		form.append('_id', dataFrame._id);
 		if (dataFrame.images)
-			dataFrame.images.forEach((e: File, i: number) => form.append(`image-${i}`, e));
+			dataFrame.images.forEach((e: File, i: number) => form.append(`image_${i}`, e));
 		delete newDF.images;
 		delete newDF._id;
 		form.append('df', JSON.stringify(newDF));
-		form.append('postKey', 'updateMobileDevice');
+		form.append('objectsToDelete', JSON.stringify(objectsToDelete));
+		if(dataFrame.removeImages && dataFrame.removeImages.length) form.append('removeImages', dataFrame.removeImages)
+		delete dataFrame.removeImages
 		await axios
-			.post('/api/update-items', form)
+			.post(`/api/${$modal.action === 'new' ? 'set-items' : 'update-items'}`, form, {
+				headers: { requestFor: $modal.action === 'new' ? 'newDeviceReq' : 'updateMobileDevice' }
+			})
 			.then((response) => {
-				console.log(response.data);
+				const res = response.data;
+				if (res.error && res.error === 'unauthenticated_user') {
+					message = { message: 'unauthenticated user please login!', variant: 'danger' };
+					return null;
+				}
+				if (res.success === 0) message = { message: res.message, variant: 'danger' };
+
+				if (res.success === 1) message = { message: 'successfully saved!', variant: 'success' };
 			})
 			.catch((e) => {
-				console.log('error: ', e);
+				message = { message: e.message, variant: 'danger' };
+				console.error('error: ', e);
 			});
 	};
 	const headersToString = (sep = '\n') => {
@@ -75,21 +114,29 @@
 			}
 		});
 	};
-
-	const getItem = async (_id: string) => {
+	const getItem = async (_id: string | number = 0) => {
+		if(_id == 0 && cats.length) return 0
 		await axios
 			.get('/api/get-items/', {
 				params: { smart_device: 1, _id, getCats: cats.length > 0 ? 0 : 1 }
 			})
 			.then((e) => {
 				loading = false;
-				item = { ...item, ...e.data.item };
-				dataFrame = item;
-				headersToString();
-				item_specs = Object.keys(dataFrame)
+				if (_id) {
+					item = { ...item, ...e.data.item };
+					dataFrame = item;
+					loves = item.loves
+					rating = item.rating
+					views = item.views
+					dataFrame.old_category = item.category
+					dataFrame['_id'] = _id;
+					item['description'] = 'hello world 1'
+					headersToString();
+					item_specs = Object.keys(dataFrame)
 					.filter((e) => (item_specs_exclude.includes(e) ? null : e))
 					.sort();
-				filesList = [PUBLIC_IMAGES_FETCH_URI + item.image, ...filesList];
+					filesList = [...item.images, ...filesList];
+				}
 				if (!(cats.length > 0)) {
 					updateStaticData({ categories: e.data.cats });
 					cats = e.data.cats;
@@ -115,40 +162,45 @@
 		let lastElement: any = element?.querySelectorAll('div');
 		lastElement = lastElement[lastElement.length - 1];
 		let lastInputIndex = lastElement.querySelector('input')['name'];
-		console.log(lastInputIndex);
 		lastInputIndex = Number(lastInputIndex.match(/\d+(?=_x_)/g)[0]);
 		newSpecItem = {
 			visible: true,
-			specs: id.split('-super')[0],
+			specs: id.split('-super')[0].replace('---', ' '),
 			lastInputIndex,
 			specs_list: element
 		};
-		console.log(newSpecItem);
 	};
 	const addSpecItemInDF = () => {
 		const key = newSpecItem.key;
 		let regex = /^[a-zA-Z0-9\s]+$/;
-		if (!regex.test(key))
-			return updateMessages({
+		if (!regex.test(key)) {
+			updateMessages({
 				message: 'You can not add special characters in your key/title.',
 				variant: 'danger'
 			});
-		if (key === undefined || key === '')
-			return updateMessages({
+			return 0;
+		}
+		if (key === undefined || key === '') {
+			updateMessages({
 				message: 'Enter a key of your new specification!',
 				variant: 'danger'
 			});
-		if (newSpecItem.value === undefined || newSpecItem.value === '')
-			return updateMessages({
+			return 0;
+		}
+		if (newSpecItem.value === undefined || newSpecItem.value === '') {
+			updateMessages({
 				message: 'Enter a value of your new specification!',
 				variant: 'danger'
 			});
+			return 0;
+		}
 		let exist = dataFrame[newSpecItem.specs].filter((item: any) => Object.keys(item)[0] === key);
 		if (exist.length > 0) {
-			return updateMessages({
+			updateMessages({
 				message: `Your entered key (${key}) is already exist on ${newSpecItem.specs}.`,
 				variant: 'danger'
 			});
+			return 0;
 		}
 		const name = `${newSpecItem.specs}___${++newSpecItem.lastInputIndex}_x_${key}`;
 		dataFrame[newSpecItem.specs].push({ [key]: newSpecItem.value });
@@ -156,7 +208,8 @@
 			message: `Title (${newSpecItem.key}) and value (${newSpecItem.value}) added successfully! add more on ${newSpecItem.specs}.`,
 			variant: 'success'
 		});
-		newSpecItem.specs_list.innerHTML += `
+		let tempElement = document.createElement('div');
+		tempElement.innerHTML = `
 			<div class="a03x s-96QAaaAScBii">
 				<label for="s${key.replaceAll(' ', '')}-spec" class="s-96QAaaAScBii">${key}</label>
 				<input
@@ -168,8 +221,10 @@
 					class="s-96QAaaAScBii"
 				/>
 			</div>
-			
 		`;
+		const childNodes = tempElement.childNodes;
+		for (let i = 0; i < childNodes.length; i++)
+			newSpecItem.specs_list.appendChild(childNodes[i].cloneNode(true));
 	};
 	const handleForm = (e: any) => {
 		e.preventDefault();
@@ -199,19 +254,40 @@
 		Object.keys(dataFrame).map((key) => {
 			if (titles[key] && titles[key] !== key) {
 				dataFrame[titles[key]] = dataFrame[key];
+				objectsToDelete[key] = '';
 				delete dataFrame[key];
 			}
 		});
-		const k = document.querySelector('#dataframe-form #description') as any;
+		const k = document.querySelector('#dataframe-form #description') as HTMLTextAreaElement;
 		let c = document.querySelector('#dataframe-form #category') as any;
-		if (k) dataFrame['description'];
+		if (k) dataFrame['description'] = k.value;
 		if (c) dataFrame['category'] = c.value;
 		item_specs = Object.keys(dataFrame).filter((e) => (item_specs_exclude.includes(e) ? null : e));
 		item_specs = item_specs.sort();
 		dataFrame.loves = loves;
 		dataFrame.rating = rating;
 		dataFrame.views = views;
-		postDataframe();
+		if (!dataFrame.images || !dataFrame.images.length) {
+			message = { message: 'Select at least one device image!', variant: 'alert' };
+			return 0;
+		}
+		if (dataFrame.headers.length < 4) {
+			message = { message: 'Add 4 or 5 device headers text!', variant: 'alert' };
+			return 0;
+		}
+		if (dataFrame.keywords === '') {
+			message = { message: 'Please add some keywords!', variant: 'alert' };
+			return 0;
+		}
+		if (dataFrame.slug === '') {
+			message = { message: 'Please enter a slug!', variant: 'alert' };
+			return 0;
+		}
+		if (dataFrame.category === '' || dataFrame.category === 'un-selected') {
+			message = { message: 'Please select a category of device!', variant: 'alert' };
+			return 0;
+		}
+		postDataframe(objectsToDelete);
 	};
 	const handleAddNewSpec = () => {
 		const spec_title: any = document.getElementById('new-spec-title');
@@ -304,15 +380,54 @@
 		const element = document.querySelector('#phone-image') as HTMLElement;
 		element.click();
 	};
-
 	const __npc = (e: Event): void => {
 		if (e.target instanceof HTMLInputElement) {
-			if(e.target.name === 'is-active')
-				dataFrame.isActive = e.target?.checked;
-			else
-				dataFrame.isNew = e.target?.checked;
+			if (e.target.name === 'is-active') dataFrame.isActive = e.target?.checked;
+			else dataFrame.is_new = e.target?.checked;
 		}
 	};
+	const shiftImage = (shift: string, cur_index: number): void => {
+		let position = 1;
+		position = shift === 'left' ? cur_index - 1 : cur_index + 1;
+		const e = filesList.splice(cur_index, 1);
+		filesList.splice(position, 0, e[0]);
+		const frameImage = dataFrame.images.splice(cur_index, 1);
+		dataFrame.images.splice(position, 0, frameImage[0]);
+		filesList = filesList;
+	};
+	const removeImage = (index: number): void => {
+		filesList.splice(index, 1);
+		filesList = filesList;
+		if (typeof dataFrame.images[index] === 'string') {
+			if (dataFrame.removeImages) dataFrame.removeImages.push(dataFrame.images[index]);
+			else dataFrame.removeImages = [dataFrame.images[index]];
+		}
+		dataFrame.images.splice(index, 1);
+		dataFrame.images = dataFrame.images;
+		dataFrame.removeImages = dataFrame.removeImages;
+	};
+	const removeFromTrash = (index: number): void => {
+		filesList = [...filesList, dataFrame.removeImages[index]];
+		dataFrame.images.push(dataFrame.removeImages[index]);
+		dataFrame.removeImages.splice(index, 1);
+		dataFrame.removeImages = dataFrame.removeImages;
+	};
+	const removeFromSpecs = (specs: string, spec: string = ''): void => {
+		if (spec === '') {
+			dataFrame[specs] = [];
+			objectsToDelete[specs] = '';
+		} else {
+			let n = dataFrame[specs].filter((e: any) => Object.keys(e)[0] !== spec);
+			dataFrame[specs] = n;
+		}
+	};
+	const handleSlug = (e:Event):void=>{
+		if(e.target instanceof HTMLInputElement){
+			let v = e.target.value.replaceAll(/\s|\W|[_]/gi, '-').replaceAll(/-{1,}/gi, '-').toLowerCase()
+			if(v.at(-1) === '-') v = v.substring(0, v.length - 1)
+			dataFrame.slug = v
+		}
+	}
 </script>
 
 <div class="modal">
@@ -367,22 +482,33 @@
 	<div class="inner-modal">
 		<div class="form" id="dataframe-form">
 			<h2>{item.title}</h2>
-			{#if loading}
-				<span>
-					<Loading loading_lines={2} />
-				</span>
-			{:else}
-				<span>
-					Added <b>{life(item.createdAt).from()}</b>. Information integrity score is
-					<b>{item.integrity}%</b>. total <b>{numberFormat(item.loves)}</b> people love this phone.
-				</span>
+			{#if $modal.action === 'edit'}
+				{#if loading}
+					<span>
+						<Loading loading_lines={2} />
+					</span>
+				{:else}
+					<span>
+						Added <b>{life(item.createdAt).from()}</b>. Information integrity score is
+						<b>{item.integrity}%</b>. total <b>{numberFormat(item.loves)}</b> people love this phone.
+					</span>
+				{/if}
 			{/if}
 			<p>
 				You can add new, update or delete the device. take any action carefully there is no change
 				to undo your actions.
 			</p>
 			<form on:submit={handleForm} id="phone-form">
-				<div class="flex" style="justify-content:space-between;">
+				<div
+					class="flex"
+					style="justify-content:space-between;align-items: flex-start;flex-direction: column;"
+				>
+					{#if typeof message === 'object' && message !== null}
+						<span
+							class="message {message.variant ? message.variant : 'success'}"
+							style="margin: 10px 0;">{message.message}</span
+						>
+					{/if}
 					<input style="margin:0" type="submit" value="SAVE PHONE" />
 				</div>
 				<div class="flex-yxz">
@@ -393,18 +519,21 @@
 							name="_y_title"
 							id="title"
 							placeholder="E.g. Samsung Galaxy A02"
-							value={item.title}
+							value={$modal.action === 'edit' ? item.title : ''}
+							on:keyup={handleSlug}
 							required
 						/>
 					</div>
 					<div class="a03x">
 						<label for="category">DEVICE CATEGORY</label>
 						<select name="_y_category" id="category">
-							{#if !cats.length}
+							{#if $modal.action === 'new'}
+								<option selected disabled value='un-selected'>Select Device Category</option>
+							{:else if !cats.length}
 								<option selected value={item.category}>{item.category}</option>
 							{/if}
 							{#each cats as cat}
-								{#if cat.category === item.category}
+								{#if $modal.action !== 'new' && cat.category === item.category}
 									<option selected value={cat.category}>{cat.category}</option>
 								{:else}
 									<option value={cat.category}>{cat.category}</option>
@@ -425,14 +554,14 @@
 								name="description"
 								id="description"
 								placeholder="Type something about phone"
-								required>{item.description}</textarea
+								required>{$modal.action === 'edit' ? item.description : ''}</textarea
 							>
 						{/if}
 					</div>
 				</div>
 				<div class="flex-yxz">
 					<div class="a03x full-w">
-						<label for="description"
+						<label for="headers"
 							>PHONE HEADERS <small
 								>(seperate with Enter (\n). You can add maximum {$static_data.settings
 									.deviceViewHeaderTextLength} headers)</small
@@ -475,48 +604,120 @@
 						/>
 					</div>
 				</div>
+				<span style="font-size: 11px;"
+					>Sort image carefully first images is device display images</span
+				>
 				<div class="flex-yxz image-list">
-					{#each filesList as file}
+					{#each filesList as file, index}
 						<div class="image-view">
-							<button><Icon src={XMark} /></button>
-							<img src={file} alt={file} />
+							<button
+								title="Remove Image"
+								on:click={() => removeImage(index)}
+								type="button"
+								class="cls-btn"><Icon src={Trash} /></button
+							>
+							<img
+								src={file.includes('data:') || file.includes('http')
+									? file
+									: PUBLIC_IMAGES_FETCH_URI + PUBLIC_PHONE_IMAGE_FOLDER + file}
+								alt={file}
+							/>
+							<div class="image-shift">
+								{#if index !== 0}
+									<button
+										on:click={() => shiftImage('left', index)}
+										title="shift to Left"
+										type="button"><Icon src={ChevronLeft} /></button
+									>
+								{/if}
+								{#if index < filesList.length - 1}
+									<button
+										on:click={() => shiftImage('right', index)}
+										title="shift to Right"
+										type="button"><Icon src={ChevronRight} /></button
+									>
+								{/if}
+							</div>
 						</div>
 					{/each}
 				</div>
-
-				{#each item_specs as specs}
-					<div class="add-spec-item">
-						<h3 class="spec-item-title" id={'__' + specs} data-original={specs} contenteditable>
-							{specs}
-						</h3>
-						<button
-							type="button"
-							on:click={() => addNewElement(specs.replaceAll(' ', '') + '-super')}
-							><Icon src={Plus} /></button
-						>
-					</div>
-					<div class="flex-yxz spec-items" id="{specs.replaceAll(' ', '')}-super">
-						{#each dataFrame[specs] as spec, item_index}
-							{#each Object.keys(spec) as key}
-								<div class="a03x c-88323">
-									<label for="s{key.replaceAll(' ', '')}-spec">{key}</label>
-									<input
-										type="text"
-										name="{specs}___{item_index}_x_{key}"
-										value={spec[key]}
-										id="s{key.replaceAll(' ', '')}-spec"
-									/>
-									<button
-										class="add-to-header"
-										type="button"
-										on:click={() => addToHeader(`s${key.replaceAll(' ', '')}-spec`)}
-									>
-										<Icon src={Plus} />
-									</button>
-								</div>
-							{/each}
+				{#if dataFrame.removeImages && dataFrame.removeImages.length}
+					<span style="font-size: 12px;color:orangered;"
+						>Image Trash (Trash images will be permanently deleted after saving)</span
+					>
+					<div class="flex-yxz image-list" style="background:#b4222233">
+						{#each dataFrame.removeImages as file, index}
+							<div class="image-view">
+								<button
+									title="Add back to the image list"
+									on:click={() => removeFromTrash(index)}
+									type="button"
+									class="cls-btn"><Icon src={ArrowUturnLeft} /></button
+								>
+								<img
+									src={file.includes('http')
+										? file
+										: PUBLIC_IMAGES_FETCH_URI + PUBLIC_PHONE_IMAGE_FOLDER + file}
+									alt={file}
+								/>
+							</div>
 						{/each}
 					</div>
+				{/if}
+				{#each item_specs as specs}
+					{#if dataFrame[specs].length}
+						<div class="add-spec-item">
+							<h3 class="spec-item-title" id={'__' + specs} data-original={specs} contenteditable>
+								{specs}
+							</h3>
+							<button
+								class="add-to-header remove-spec"
+								type="button"
+								title="Remove '{specs}' and its specs"
+								style="margin-left: 34px;"
+								on:click={() => removeFromSpecs(specs)}
+							>
+								<Icon src={Minus} />
+							</button>
+							<button
+								type="button"
+								title="Add new specification on '{specs}'"
+								on:click={() => addNewElement(specs.replaceAll(' ', '---') + '-super')}
+								><Icon src={Plus} /></button
+							>
+						</div>
+						<div class="flex-yxz spec-items" id="{specs.replaceAll(' ', '---')}-super">
+							{#each dataFrame[specs] as spec, item_index}
+								{#each Object.keys(spec) as key}
+									<div class="a03x c-88323">
+										<button
+											class="add-to-header remove-spec"
+											type="button"
+											title="Remove '{key}'"
+											on:click={() => removeFromSpecs(specs, key)}
+										>
+											<Icon src={Minus} />
+										</button>
+										<label for="s{key.replaceAll(' ', '')}-spec">{key}</label>
+										<input
+											type="text"
+											name="{specs}___{item_index}_x_{key}"
+											value={spec[key]}
+											id="s{key.replaceAll(' ', '')}-spec"
+										/>
+										<button
+											class="add-to-header"
+											type="button"
+											title="add '{key}' value to headers list"
+											on:click={() => addToHeader(`s${key.replaceAll(' ', '')}-spec`)}
+										>
+											<Icon src={Plus} />
+										</button>
+									</div>
+								{/each}
+							{/each}
+						</div>
+					{/if}
 				{/each}
 				<div class="border-tag">
 					<div class="flex-yxz spec-items">
@@ -557,12 +758,12 @@
 				</div>
 				<div class="flex-yxz number-sec">
 					<div class="a03x">
-						<CustomNumberInput bind:output={views} value={dataFrame.views} title={'Views'} />
+						<CustomNumberInput bind:output={views} value={views} title={'Views'} />
 					</div>
 					<div class="a03x">
 						<CustomNumberInput
 							bind:output={rating}
-							value={dataFrame.rating}
+							value={rating}
 							title={'Rating'}
 							maximum={5.0}
 							minimum={0.0}
@@ -571,7 +772,7 @@
 						/>
 					</div>
 					<div class="a03x">
-						<CustomNumberInput bind:output={loves} value={dataFrame.loves} title={'Loves'} />
+						<CustomNumberInput bind:output={loves} value={loves} title={'Loves'} />
 					</div>
 				</div>
 
@@ -620,7 +821,7 @@
 							name="is-new"
 							id="is-new"
 							on:change={__npc}
-							checked={item.isNew}
+							checked={item.is_new}
 						/>
 						<label for="is-new">ITEM IS NEW <small>(toggle to item as new)</small></label>
 					</div>
@@ -635,18 +836,21 @@
 							<input
 								type="text"
 								name="_y_slug"
-								value={item.slug}
+								value={item.slug ?? dataFrame.slug ?? ''}
 								id="slug"
-								placeholder="Enter phone slug here..."
+								placeholder="Enter device slug here..."
 							/>
 						{/if}
 					</div>
 				</div>
-				<input type="submit" value="UPDATE PHONE" />
+				<input type="submit" value="SAVE" />
+				{#if typeof message === 'object' && message !== null}
+					<span
+						class="message {message.variant ? message.variant : 'success'}"
+						style="margin: 10px 0;">{message.message}</span
+					>
+				{/if}
 			</form>
 		</div>
 	</div>
 </div>
-
-<style lang="scss">
-</style>

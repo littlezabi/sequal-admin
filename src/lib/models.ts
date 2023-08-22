@@ -45,7 +45,8 @@ const SettingsSchema = new mongoose.Schema(
 			type: String,
 			default: getRandomChar(100, {})
 		}, 
-		UserProfilePictureWidth: {type: Number, default: 320, required: true}
+		UserProfilePictureWidth: {type: Number, default: 320, required: true},
+		categoryTypes: {type:Array, default: ['general']}
 	},
 	{
 		timestamps: true
@@ -173,16 +174,18 @@ const laptopsSchema = new mongoose.Schema(
 
 const smartSchema = new mongoose.Schema(
 	{
-		name: { type: String, required: true },
-		brief_scrap: { type: Object, required: true },
-		mobile_specs: { type: Object, required: true },
-		mobile_pricing: { type: Object, required: true },
-		original: { type: String, required: false },
-		slug: { type: String, require: true, unique: true },
-		views: { type: Number, require: false, default: 1 },
-		loves: { type: Number, require: false, default: 1 },
-		rating: { type: Number, require: false, default: 4 },
-		subtitle: { type: String, require: false }
+		title: { type: String, required: true },
+		keywords: { type: String, required: true },
+		description: { type: String, required: true },
+		views: { type: Number, default: 0 },
+		loves: { type: Number, default: 0 },
+		rating: {type: Number, default: 5.0},
+		slug: { type: String, required: true, unique: true },
+		category: { type: String, required: true },
+		is_new: { type: Boolean, required: true },
+		isActive: { type: Boolean, default: true },
+		headers: { type: Array, required: true },
+		images: { type: Array, required: true },
 	},
 	{
 		timestamps: true,

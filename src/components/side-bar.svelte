@@ -10,7 +10,10 @@
 		CpuChip,
 		Users,
 		ChatBubbleBottomCenterText,
-		ChevronLeft
+		ChevronLeft,
+
+		Tag
+
 	} from 'svelte-hero-icons';
 	let sideBarClose = true;
 </script>
@@ -49,15 +52,21 @@
 			</a>
 		</li>
 		<li>
-			<a class="flex" href="/">
+			<a class="flex" href="/blogs">
 				<Icon src={ClipboardDocument} />
 				<span>Blogs</span>
 			</a>
 		</li>
 		<li>
-			<a class="flex" href="/">
+			<a class="flex" href="/files">
 				<Icon src={Photo} />
 				<span>Files</span>
+			</a>
+		</li>
+		<li>
+			<a class="flex" href="/categories">
+				<Icon src={Tag} />
+				<span>Categories</span>
 			</a>
 		</li>
 		<li>

@@ -51,7 +51,7 @@
 				{value}
 				style="display: inline-block"
 			/>
-			<span class="cn-title">{numberFormat(value)} {title}</span>
+			<span class="cn-title">{numberFormat(value ?? 0)} {title}</span>
 		</div>
 		<button
 			on:mousedown={() => handleNumbers(1)}

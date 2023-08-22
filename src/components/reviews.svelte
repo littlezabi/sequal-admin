@@ -2,9 +2,10 @@
 	import { getRandomColor, life, setUserCharName, trimTitle } from '$lib/globals';
 	import { Icon, MapPin, ArrowUturnLeft, Fire } from 'svelte-hero-icons';
 	import OpenComment from './open-comment.svelte';
+	import { PUBLIC_IMAGES_FETCH_URI } from '$env/static/public';
 	const detials = (id: string, item: any) => {
 		new OpenComment({
-			target: document.getElementById(id),
+			target: document.getElementById(id) as Element,
 			hydrate: true,
 			props: { item, id }
 		});
@@ -21,12 +22,14 @@
 				<div class="image">
 					{#if !item.user.avatar || item.user.avatar === ''}
 						<div>
-							{setUserCharName(item.user.firstname+' '+item.user.lastname)}
+							{setUserCharName(item.user.firstname + ' ' + item.user.lastname)}
 						</div>
-					{:else}
+					{:else if item.avatar}
 						<img
-							style={`border-color: ${getRandomColor(0.5)}`}
-							src={item.user.avatar}
+							class="list-image"
+							src={item.avatar.includes('http')
+								? item.avatar
+								: PUBLIC_IMAGES_FETCH_URI + 'images/users/' + item.avatar}
 							alt={item.firstname}
 						/>
 					{/if}

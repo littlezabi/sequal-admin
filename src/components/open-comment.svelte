@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { getRandomColor, life, setUserCharName } from '$lib/globals';
+	import { PUBLIC_IMAGES_FETCH_URI } from '$env/static/public';
+	import { life, setUserCharName } from '$lib/globals';
 	import { Icon, MapPin, PaperAirplane, XMark } from 'svelte-hero-icons';
 	export let item: any = [];
 	export let id: string;
@@ -26,10 +27,12 @@
 						<div>
 							{setUserCharName(item?.fullname)}
 						</div>
-					{:else}
+					{:else if item.avatar}
 						<img
-							style={`border-color: ${getRandomColor(0.5)}`}
-							src={item.user.avatar}
+							class="list-image"
+							src={item.avatar.includes('http')
+								? item.avatar
+								: PUBLIC_IMAGES_FETCH_URI + 'images/users/' + item.avatar}
 							alt={item.firstname}
 						/>
 					{/if}

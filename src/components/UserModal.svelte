@@ -137,17 +137,14 @@
 			form.append(e, userObject[e]);
 		});
 		form.append('profileWidth', $static_data.settings.UserProfilePictureWidth ?? 300);
-		form.append('postKey', $modal.action === 'new' ? 'adduser-1' : 'updateUser-1');
-
+		const headers:any = $modal.admin_key ? { admin_key: $modal.admin_key } : {}
+		headers['requestFor'] = $modal.action === 'new' ? 'adduser-1' : 'updateUser-1'
 		await axios
-			.post($modal.action === 'new' ? '/api/set-items' : '/api/update-items', form, {
-				headers: $modal.admin_key ? { admin_key: $modal.admin_key } : {}
-			})
+			.post($modal.action === 'new' ? '/api/set-items' : '/api/update-items', form, {headers})
 			.then((e) => {
 				let res = e.data;
 				changesHappened = true;
 				if (res.success) {
-					console.log(res);
 					if ($modal.action === 'edit') {
 						message = {
 							message: `User updated successfully!`,

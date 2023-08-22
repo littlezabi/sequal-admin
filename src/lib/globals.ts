@@ -213,11 +213,13 @@ export const chartOptions = (title: any, xaxis: any, yaxis: any): {} => {
 };
 
 export const numberFormat = (__num__: number) => {
-	return __num__ >= 1000000
-		? (__num__ / 1000000).toFixed(1) + 'M'
-		: __num__ >= 1000
-		? (__num__ / 1000).toFixed(1) + 'k'
-		: __num__.toString();
+	if (typeof __num__ === 'number')
+		return __num__ >= 1000000
+			? (__num__ / 1000000).toFixed(1) + 'M'
+			: __num__ >= 1000
+			? (__num__ / 1000).toFixed(1) + 'k'
+			: __num__.toString();
+	else return 0;
 };
 
 export const alterNumberFormat = (number: number) => {
@@ -275,6 +277,6 @@ export const getRandomChar = (
 		if (nchar === '') r = Math.ceil(Math.random() * 61);
 		nchar += chars[r];
 	}
-	nchar = nchar.replaceAll('undefined', 'techokhan')
+	nchar = nchar.replaceAll('undefined', 'techokhan');
 	return options.uppercase ? nchar.toUpperCase() : options.lowercase ? nchar.toLowerCase() : nchar;
 };

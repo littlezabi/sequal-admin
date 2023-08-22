@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { PUBLIC_IMAGES_FETCH_URI } from '$env/static/public';
 	import { getRandomColor, life, setUserCharName } from '$lib/globals';
 	import { Icon, MapPin, Users } from 'svelte-hero-icons';
 	export let users: any = [];
@@ -10,18 +11,20 @@
 		<section class="flex" style={`background: ${getRandomColor(0.15)}`}>
 			<div class="p-view">
 				<div class="image">
-				{#if !item.avatar || item.avatar === ''}
-					<div>
-						{setUserCharName(item?.firstname + ' ' + item?.lastname)}
-					</div>
-				{:else}
-					<img
-						style={`border-color: ${getRandomColor(0.5)}`}
-						src={item.avatar}
-						alt={item.firstname}
-					/>
-				{/if}
-			</div>
+					{#if !item.avatar || item.avatar === ''}
+						<div>
+							{setUserCharName(item?.firstname + ' ' + item?.lastname)}
+						</div>
+					{:else if item.avatar}
+						<img
+							class="list-image"
+							src={item.avatar.includes('http')
+								? item.avatar
+								: PUBLIC_IMAGES_FETCH_URI + 'images/users/' + item.avatar}
+							alt={item.firstname}
+						/>
+					{/if}
+				</div>
 			</div>
 			<div class="text">
 				<div class="flex a3ss3">
@@ -36,7 +39,7 @@
 	{/each}
 </div>
 
-<style lang='scss'>
+<style lang="scss">
 	.username1 {
 		font-size: 16px;
 		text-transform: capitalize;

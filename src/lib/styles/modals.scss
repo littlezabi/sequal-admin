@@ -78,7 +78,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        margin-left: 12px;
+        margin-left: 4px;
         border: 2px solid #0000001c;
         padding: 4px;
     }
@@ -124,7 +124,7 @@
 .image-view {
     position: relative;
     cursor: pointer;
-    & button {
+    & button.cls-btn {
         position: absolute;
         right: 0;
         width: 25px;
@@ -140,8 +140,35 @@
         border-radius: 50%;
         display: none;
     }
+    & .image-shift{
+        position: absolute;
+        bottom: 2px;
+        left: 0;
+        right: 0;
+        margin: auto;
+        text-align: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: min-content;
+        & button{
+            padding: 0;
+            margin: 0;
+            border: none;
+            background: none;
+            display: none;
+            & svg{
+                color: #e3e3e3;
+                background: rgba(0, 0, 0, 0.431372549);
+                border-radius: 50%;
+                width: 17px;
+                padding: 5px;
+                border: 1px solid #ffffff5c;
+            }
+        }
+    }
     &:hover {
-        & > button {
+        & > button, & .image-shift button {
             display: flex;
         }
     }
