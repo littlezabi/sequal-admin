@@ -16,12 +16,16 @@
 		Wrench,
 		Cog6Tooth,
 		DevicePhoneMobile,
-		Plus
+		Plus,
+		Trash
 	} from 'svelte-hero-icons';
-	import { modal, modalUpdate } from '$lib/store';
+	import { modal, modalUpdate, promptModalUpdate, updateMessages } from '$lib/store';
 	import SmartDeviceView from '$compo/smart-device-view.svelte';
+	import axios from 'axios';
+	import Pagination from '$compo/pagination.svelte';
 	export let data: PageData;
 	let items: any = data.list;
+	$: data.pageNo, (items = data.list);
 	const sort = (by: any): any => {
 		let order = by.target.value.split('_').at(-1);
 		by = by.target.value.split('_')[0];
@@ -47,7 +51,43 @@
 			});
 	};
 	const handleEdit = (item: any) => {
-		modalUpdate({ visible: true, ...item, action:'edit' });
+		modalUpdate({ visible: true, ...item, action: 'edit' });
+	};
+	const handleDelete = (item: any) => {
+		promptModalUpdate({
+			visible: true,
+			title: `CONFIRM DELETE`,
+			description: `Are you sure you want to delete the item '${item.title}'? Please proceed with caution, as this action is irreversible and cannot be undone.`,
+			confirm: [
+				{
+					title: 'DELETE',
+					class: 'bg-danger',
+					callback: async () => {
+						await axios
+							.post(
+								'/api/delete-items',
+								{ _id: item._id, images: item.images, model: 'mobile' },
+								{ headers: { requestFor: 'deleteItem' } }
+							)
+							.then((e) => {
+								updateMessages({
+									message: e.data.message,
+									variant: e.data.success ? 'success' : 'alert'
+								});
+								if (e.data.success) items = items.filter((e: any) => e._id !== item._id);
+								promptModalUpdate({ visible: false });
+							})
+							.catch((e) => console.error(e));
+					},
+					type: 'button'
+				},
+				{
+					title: 'CANCIL',
+					callback: () => promptModalUpdate({ visible: false }),
+					type: 'button'
+				}
+			]
+		});
 	};
 </script>
 
@@ -95,98 +135,97 @@
 		</span>
 	</div>
 	<div class="container">
-		<section class="item-head item-section" style={`background: ${getRandomColor(0.1)}`}>
-			<span class="flex item-index">
-				# <Icon src={ListBullet} />
-			</span>
-			<span>
-				Image
-				<Icon src={Photo} />
-			</span>
-			<span class="item-name">
-				Title
-				<Icon src={DeviceTablet} />
-			</span>
-			<span>
-				Category
-				<Icon src={CircleStack} />
-			</span>
-			<span>
-				integrity %
-				<Icon src={ReceiptPercent} />
-			</span>
-			<span>
-				Created
-				<Icon src={Clock} />
-			</span>
-			<span>
-				Acitve
-				<Icon src={QueueList} />
-			</span>
-			<span>
-				Action
-				<Icon src={Cog6Tooth} />
-			</span>
-		</section>
-		{#each items as item}
-			<section class="item-section list" style={`background: ${getRandomColor(0.1)}`}>
-				<span class="item-index">{item.index}</span>
-				<span>
-					{#if item.images.length}
-						<img
-							src={item.images[0].includes('http')
-								? item.images[0]
-								: PUBLIC_IMAGES_FETCH_URI + PUBLIC_PHONE_IMAGE_FOLDER + item.images[0]}
-							alt={item.title}
-						/>
-					{:else}
-						<Icon style="width: 42px !important" src={DevicePhoneMobile} />
-					{/if}
-				</span>
-				<span class="item-name">{item.title}</span>
-				<span class="item-cat">{item.category}</span>
-				<span>{item.integrity}%</span>
-				<span>{life(item.createdAt).from()}</span>
-				<span
-					>{#if item.isActive}<Icon src={Eye} /> {:else} <Icon src={EyeSlash} />{/if}</span
-				>
-				<button on:click={() => handleEdit(item)}><Icon src={Wrench} /></button>
-			</section>
-		{/each}
-		<section class="item-head item-section" style={`background: ${getRandomColor(0.1)}`}>
-			<span class="flex item-index">
-				# <Icon src={ListBullet} />
-			</span>
-			<span>
-				Image
-				<Icon src={Photo} />
-			</span>
-			<span class="item-name">
-				Title
-				<Icon src={DeviceTablet} />
-			</span>
-			<span>
-				Category
-				<Icon src={CircleStack} />
-			</span>
-			<span>
-				integrity %
-				<Icon src={ReceiptPercent} />
-			</span>
-			<span>
-				Created
-				<Icon src={Clock} />
-			</span>
-			<span>
-				Acitve
-				<Icon src={QueueList} />
-			</span>
-			<span>
-				Action
-				<Icon src={Cog6Tooth} />
-			</span>
-		</section>
+		<table>
+			<thead>
+				<tr class="item-head item-section" style={`background: ${getRandomColor(0.1)}`}>
+					<th>
+						<div class="flex">
+							<Icon src={ListBullet} />
+							<span style="margin-left: 10px;">#</span>
+						</div>
+					</th>
+					<th>
+						<div class="flex">
+							<Icon src={Photo} />
+							<span style="margin-left: 10px;">Image</span>
+						</div>
+					</th>
+					<th class="item-name">
+						<div class="flex">
+							<Icon src={DeviceTablet} />
+							<span style="margin-left: 10px;">Title</span>
+						</div>
+					</th>
+					<th>
+						<div class="flex">
+							<Icon src={CircleStack} />
+							<span style="margin-left: 10px;">Category</span>
+						</div>
+					</th>
+					<th>
+						<div class="flex">
+							<Icon src={ReceiptPercent} />
+							<span style="margin-left: 10px;">Integrity</span>
+						</div>
+					</th>
+					<th>
+						<div class="flex">
+							<Icon src={Clock} />
+							<span style="margin-left: 10px;">Created</span>
+						</div>
+					</th>
+					<th>
+						<div class="flex">
+							<Icon src={Eye} />
+							<span style="margin-left: 10px;">Acitve</span>
+						</div>
+					</th>
+					<th>
+						<div class="flex">
+							<Icon src={Cog6Tooth} />
+							<span style="margin-left: 10px;">Action</span>
+						</div>
+					</th>
+				</tr>
+			</thead>
+			<tbody>
+				{#each items as item, index}
+					<tr
+						class="fade-in item-section list"
+						style={`background: ${getRandomColor(0.1)};animation-delay: ${index * 100}ms`}
+					>
+						<td>{item.index}</td>
+						<td>
+							{#if item.images.length}
+								<img
+									src={item.images[0].includes('http')
+										? item.images[0]
+										: PUBLIC_IMAGES_FETCH_URI + PUBLIC_PHONE_IMAGE_FOLDER + item.images[0]}
+									alt={item.title}
+								/>
+							{:else}
+								<Icon style="width: 42px !important" src={DevicePhoneMobile} />
+							{/if}
+						</td>
+						<td class="item-name">{item.title}</td>
+						<td class="item-cat">{item.category}</td>
+						<td>{item.integrity}%</td>
+						<td>{life(item.createdAt).from()}</td>
+						<td
+							>{#if item.isActive}<Icon src={Eye} /> {:else} <Icon src={EyeSlash} />{/if}</td
+						>
+						<td>
+							<button title="Edit" on:click={() => handleEdit(item)}><Icon src={Wrench} /></button>
+							<button title="Delete" style="margin-left: 8px;" on:click={() => handleDelete(item)}
+								><Icon src={Trash} /></button
+							>
+						</td>
+					</tr>
+				{/each}
+			</tbody>
+		</table>
 	</div>
+	<Pagination renderFor={`/mobiles/`} counter_model={`mobiles`} pageNo={data.pageNo} />
 </div>
 
 <style lang="scss">
@@ -224,9 +263,6 @@
 
 		.item-section {
 			margin: 8px 0;
-			display: grid;
-			grid-template-columns: auto auto 1fr 1fr 1fr 1fr 1fr 1fr;
-			align-items: center;
 			background-color: var(--charts-element-bg);
 			padding: 6px 10px;
 			border-radius: 8px;
@@ -243,39 +279,7 @@
 					background: #9b9bff69;
 				}
 			}
-			& span {
-				width: 98px;
-				&:nth-child(1) {
-					width: 60px;
-				}
-				&:nth-child(2) {
-					width: 72px;
-				}
-				&:nth-child(3) {
-					width: 200px;
-					padding: 0 8px;
-				}
-				&:nth-child(4) {
-					width: 93px;
-				}
-				&:nth-child(5) {
-					width: 106px;
-				}
-				&:nth-child(6) {
-					width: 80px;
-				}
-				&:nth-child(7) {
-					width: 69px;
-				}
-			}
-			& .item-index {
-				display: flex;
-				align-items: center;
-				justify-content: center;
-			}
-			& span {
-				font-size: 14px;
-			}
+
 			&.item-head {
 				& span {
 					text-transform: uppercase;
@@ -284,10 +288,7 @@
 					align-items: center;
 				}
 			}
-			& .item-name {
-				padding: 0 10px;
-				margin-left: 8px;
-			}
+
 			& .item-cat {
 				text-transform: uppercase;
 			}

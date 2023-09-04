@@ -1,19 +1,18 @@
 import { PUBLIC_IMAGES_STATIC_PATH, PUBLIC_PHONE_IMAGE_FOLDER } from '$env/static/public';
 import { getRandomChar } from '$lib/globals';
-import { Admin, Settings, categoriesModel, smartModel } from '$lib/models';
+import { Admin, Settings, categoriesModel, laptopsModel, smartModel } from '$lib/models';
 import { writeFileSync, unlink } from 'fs';
 import { join } from 'path';
 import sharp from 'sharp';
 import { Users } from 'svelte-hero-icons';
 import bcrypt from 'bcryptjs';
+import mongoose from 'mongoose';
 
 export const handleDeviceUpdate = async (formData: any, action = 'edit') => {
 	try {
 		const form = Object.fromEntries(formData);
 		const dataframe = JSON.parse(form.df);
-		delete dataframe.index;
-		delete dataframe.visible;
-		let _id = false;
+		const info = JSON.parse(form.info)
 		dataframe.images = [];
 		let images: any = Object.keys(form).filter(
 			(e) => e !== 'df' && e.includes('image_') && form[e]
@@ -33,7 +32,7 @@ export const handleDeviceUpdate = async (formData: any, action = 'edit') => {
 					image = image.toLowerCase();
 					dataframe.images.push(image);
 					const arrayBuffer: any = await file.arrayBuffer();
-					const filePath = join(PUBLIC_IMAGES_STATIC_PATH + 'phones-temp/', image);
+					const filePath = join(PUBLIC_IMAGES_STATIC_PATH + PUBLIC_PHONE_IMAGE_FOLDER, image);
 					writeFileSync(filePath, Buffer.from(arrayBuffer));
 					return image;
 				} catch (e) {
@@ -47,8 +46,7 @@ export const handleDeviceUpdate = async (formData: any, action = 'edit') => {
 			const objectsToDelete = JSON.parse(form.objectsToDelete);
 			delete dataframe.objectsToDelete;
 			Object.keys(objectsToDelete).forEach((e) => delete dataframe[e]);
-			const trash = form.removeImages;
-			delete dataframe.removeImages;
+			const trash = info.removeImages;
 			if (trash) {
 				trash.forEach((e: string): void => {
 					try {
@@ -56,16 +54,17 @@ export const handleDeviceUpdate = async (formData: any, action = 'edit') => {
 					} catch (e) {}
 				});
 			}
-			if (dataframe.old_category !== dataframe.category) {
+			if (info.old_category !== dataframe.category) {
 				await categoriesModel.updateOne(
 					{ category: dataframe.old_category },
 					{ $inc: { items: -1 } }
 				);
 				await categoriesModel.updateOne({ category: dataframe.category }, { $inc: { items: 1 } });
 			}
+			console.log('id: ', new mongoose.Types.ObjectId(dataframe.category))
 			const saved = await smartModel.updateOne(
-				{ _id: form._id },
-				{ $unset: objectsToDelete, $set: dataframe }
+				{ _id: info._id },
+				{ $unset: objectsToDelete, $set: {...dataframe, category: new mongoose.Types.ObjectId(dataframe.category)} }
 			);
 			if (saved) return new Response(JSON.stringify({ success: 1 }), { status: 200 });
 			else
@@ -106,11 +105,71 @@ export const handleDeviceUpdate = async (formData: any, action = 'edit') => {
 	}
 };
 
-export const handleCategories = async (formData: any) => {
+export const handleCategories = async (formData: any, action = 'edit') => {
 	try {
 		const form = Object.fromEntries(formData);
-		console.log(form)
-	} catch (e) {}
+		let _id = form._id;
+		let dataframe = JSON.parse(form.df);
+		if (form.image) {
+			if ((form.image as File).name !== undefined) {
+				const file = form.image as File;
+				let image_name =
+					'/images/logos/' +
+					getRandomChar(12, { numbers: false, lowercase: true }) +
+					'.' +
+					file.name.split('.').pop();
+				image_name = image_name.toLowerCase();
+				dataframe.image = image_name;
+				const arrayBuffer: any = await file.arrayBuffer();
+				const filePath = join(PUBLIC_IMAGES_STATIC_PATH, image_name);
+				writeFileSync(filePath, Buffer.from(arrayBuffer));
+				if (action === 'edit') {
+					try {
+						if (form.old_image !== form.image)
+							unlink(PUBLIC_IMAGES_STATIC_PATH + form.old_image, (e) => {});
+					} catch (e) {}
+				}
+			}
+		}
+		if (action === 'edit') delete dataframe.old_image;
+		console.log('form: ', form);
+		const old_cat = dataframe.old_category_name
+		delete dataframe.old_category_name
+		delete dataframe.old_category_type
+		
+		if (action === 'edit') {
+			await categoriesModel.updateOne({ _id }, { $set: dataframe });
+			// if(old_cat !== dataframe.category){
+			// 	// await smartModel.updateMany({category: old_cat}, {$set: {category: dataframe.category}})
+			// 	// await laptopsModel.updateMany({category: old_cat}, {$set: {category: dataframe.category}})
+				
+			// }
+			return new Response(
+				JSON.stringify({
+					message: `Successfully updated!`,
+					success: 1
+				})
+			);
+		} else {
+			const c = new categoriesModel(dataframe);
+			await c.save();
+			return new Response(
+				JSON.stringify({
+					message: `Successfully created!`,
+					success: 1
+				})
+			);
+		}
+	} catch (e: any) {
+		console.log(e.error)
+		return new Response(
+			JSON.stringify({
+				message: `Error: ${e.message}`,
+				success: 0
+			}),
+			{ status: 200 }
+		);
+	}
 };
 export const handleUpdateUser = async (formData: any) => {
 	try {
@@ -171,10 +230,10 @@ export const handleUpdateUser = async (formData: any) => {
 					getRandomChar(12, { numbers: false, lowercase: true }) + '.' + file.name.split('.').pop();
 				const arrayBuffer = await file.arrayBuffer();
 				const resizedImage = await sharp(arrayBuffer).resize({ width: profileWidth }).toBuffer();
-				const filePath = join(PUBLIC_IMAGES_STATIC_PATH + 'users', avatar);
+				const filePath = join(PUBLIC_IMAGES_STATIC_PATH + '/images/users', avatar);
 				writeFileSync(filePath, resizedImage);
 				try {
-					unlink(PUBLIC_IMAGES_STATIC_PATH + 'users/' + user.avatar, (e) => {});
+					unlink(PUBLIC_IMAGES_STATIC_PATH + '/images/users/' + user.avatar, (e) => {});
 				} catch (e) {}
 			}
 		}

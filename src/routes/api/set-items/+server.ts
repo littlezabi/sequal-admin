@@ -1,12 +1,9 @@
 import { authenticateAdmin } from '$lib/users';
-import { handleDeviceUpdate } from '../update-items/handlers';
+import { handleCategories, handleDeviceUpdate } from '../update-items/handlers';
 import { handleUser } from './set-items';
 
 export const POST = async ({ request, cookies }: any) => {
-	let authenticated = await authenticateAdmin(
-		cookies.get('admin'),
-		request.headers.get('admin_key')
-	);
+	let authenticated = await authenticateAdmin(cookies.get('admin'));
 	if (!authenticated) {
 		cookies.delete('admin');
 		return new Response(
@@ -18,6 +15,7 @@ export const POST = async ({ request, cookies }: any) => {
 		);
 	}
 	const requestFor = request.headers.get('requestFor')
+	if (requestFor === 'newCategory') return handleCategories(await request.formData(), 'new')
 	if (requestFor === 'newDeviceReq') return handleDeviceUpdate(await request.formData(), 'new')
 	if (requestFor === 'adduser-1') return handleUser(await request.formData())
 	return new Response(JSON.stringify({ message: 'Its seem you accessing api without any data', success: 0 }), { status: 200 });

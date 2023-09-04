@@ -8,17 +8,10 @@ export const authenticateAdminKey = async (key: string) => {
 	return false;
 };
 
-export const authenticateAdmin = async (admin: any = false, admin_key = false) => {
-	const confirm = admin || admin_key
-	if (!confirm) return 0;
+export const authenticateAdmin = async (admin: any = false) => {
 	if (admin) {
 		if (typeof admin === 'string') admin = JSON.parse(admin);
 		return verifyJWT(admin.jwt) ? true : false;
-	}
-	if (admin_key) {
-		const auth = await Settings.findOne({}, { oneTimeAdminLoginKey: 1 });
-		if (auth && auth.oneTimeAdminLoginKey === admin_key) return true;
-		return false;
 	}
 	return false;
 };

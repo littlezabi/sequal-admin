@@ -27,9 +27,8 @@
 	// let loading = $modal.action === 'new' ? false : true;
 	let loading = false;
 	let cats: [] | any = $static_data.categories;
-	$: $modal,
-		(item = $modal), getItem($modal.action === 'new' ? 0 : $modal._id);
-		
+	$: $modal, (item = $modal), getItem($modal.action === 'new' ? 0 : $modal._id);
+
 	document.querySelector('body')?.classList.add('modal-open');
 	const handleClose = () => {
 		modalUpdate({ visible: false });
@@ -60,29 +59,34 @@
 		'headers',
 		'removeImages',
 		'action',
-		'old_category'
+		'old_category',
+		'category_id'
 	];
 	let dataFrame: any = {
-		headers: [],
-		images: [],
-		keywords: '',
-		is_new: true,
-		isActive: true,
-		description: '',
-		slug: ''
+		data: {
+			headers: [],
+			images: [],
+			keywords: '',
+			is_new: true,
+			isActive: true,
+			description: '',
+			slug: ''
+		},
+		info: {
+			removeImages: []
+		},
+		images: []
 	};
 	const postDataframe = async (objectsToDelete: any) => {
-		const newDF = dataFrame;
 		const form = new FormData();
-		form.append('_id', dataFrame._id);
+		console.log('frame: ', dataFrame);
 		if (dataFrame.images)
 			dataFrame.images.forEach((e: File, i: number) => form.append(`image_${i}`, e));
-		delete newDF.images;
-		delete newDF._id;
-		form.append('df', JSON.stringify(newDF));
+		form.append('df', JSON.stringify(dataFrame.data));
+		form.append('info', JSON.stringify(dataFrame.info));
 		form.append('objectsToDelete', JSON.stringify(objectsToDelete));
-		if(dataFrame.removeImages && dataFrame.removeImages.length) form.append('removeImages', dataFrame.removeImages)
-		delete dataFrame.removeImages
+		if (dataFrame.info.removeImages && dataFrame.info.removeImages.length)
+			form.append('removeImages', dataFrame.info.removeImages);
 		await axios
 			.post(`/api/${$modal.action === 'new' ? 'set-items' : 'update-items'}`, form, {
 				headers: { requestFor: $modal.action === 'new' ? 'newDeviceReq' : 'updateMobileDevice' }
@@ -104,9 +108,9 @@
 	};
 	const headersToString = (sep = '\n') => {
 		headers = '';
-		dataFrame.headers.map((e: string, i: number) => {
+		dataFrame.data.headers.map((e: string, i: number) => {
 			if (e !== '') {
-				if (i + 1 >= dataFrame.headers.length) headers += e;
+				if (i + 1 >= dataFrame.data.headers.length) headers += e;
 				else {
 					if (i + 1 >= $static_data.settings.deviceViewHeaderTextLength) headers += e;
 					else headers += e + sep;
@@ -115,27 +119,32 @@
 		});
 	};
 	const getItem = async (_id: string | number = 0) => {
-		if(_id == 0 && cats.length) return 0
+		if (_id == 0 && cats.length) return 0;
+		const params: any = { smart_device: 1, _id };
+		if (!cats.length) params['getCats'] = 'phones';
 		await axios
 			.get('/api/get-items/', {
-				params: { smart_device: 1, _id, getCats: cats.length > 0 ? 0 : 1 }
+				params
 			})
 			.then((e) => {
 				loading = false;
 				if (_id) {
 					item = { ...item, ...e.data.item };
-					dataFrame = item;
-					loves = item.loves
-					rating = item.rating
-					views = item.views
-					dataFrame.old_category = item.category
-					dataFrame['_id'] = _id;
-					item['description'] = 'hello world 1'
+					dataFrame.data = item;
+					loves = item.loves;
+					rating = item.rating;
+					views = item.views;
+					dataFrame.info.old_category = item.category_id;
+					dataFrame.info._id = _id;
+					dataFrame.images = item.images;
+					['images', 'category_id', 'visible', 'action', '_id', 'createdAt'].map(
+						(e) => delete dataFrame.data[e]
+					);
 					headersToString();
-					item_specs = Object.keys(dataFrame)
-					.filter((e) => (item_specs_exclude.includes(e) ? null : e))
-					.sort();
-					filesList = [...item.images, ...filesList];
+					item_specs = Object.keys(dataFrame.data)
+						.filter((e) => (item_specs_exclude.includes(e) ? null : e))
+						.sort();
+					filesList = [...dataFrame.images, ...filesList];
 				}
 				if (!(cats.length > 0)) {
 					updateStaticData({ categories: e.data.cats });
@@ -194,7 +203,9 @@
 			});
 			return 0;
 		}
-		let exist = dataFrame[newSpecItem.specs].filter((item: any) => Object.keys(item)[0] === key);
+		let exist = dataFrame.data[newSpecItem.specs].filter(
+			(item: any) => Object.keys(item)[0] === key
+		);
 		if (exist.length > 0) {
 			updateMessages({
 				message: `Your entered key (${key}) is already exist on ${newSpecItem.specs}.`,
@@ -203,7 +214,7 @@
 			return 0;
 		}
 		const name = `${newSpecItem.specs}___${++newSpecItem.lastInputIndex}_x_${key}`;
-		dataFrame[newSpecItem.specs].push({ [key]: newSpecItem.value });
+		dataFrame.data[newSpecItem.specs].push({ [key]: newSpecItem.value });
 		updateMessages({
 			message: `Title (${newSpecItem.key}) and value (${newSpecItem.value}) added successfully! add more on ${newSpecItem.specs}.`,
 			variant: 'success'
@@ -243,47 +254,49 @@
 				let loc = element.name?.split('___')[0];
 				let index = element.name?.match(/\d+(?=_x_)/);
 				if (index) index = index[0];
-				dataFrame[loc][index] = { [key]: value };
+				dataFrame.data[loc][index] = { [key]: value };
 			}
 			key = element.name.split('_y_')[1];
 			if (key) {
 				value = element.value;
-				dataFrame[key] = value;
+				dataFrame.data[key] = value;
 			}
 		});
-		Object.keys(dataFrame).map((key) => {
+		Object.keys(dataFrame.data).map((key) => {
 			if (titles[key] && titles[key] !== key) {
-				dataFrame[titles[key]] = dataFrame[key];
+				dataFrame.data[titles[key]] = dataFrame.data[key];
 				objectsToDelete[key] = '';
-				delete dataFrame[key];
+				delete dataFrame.data[key];
 			}
 		});
 		const k = document.querySelector('#dataframe-form #description') as HTMLTextAreaElement;
 		let c = document.querySelector('#dataframe-form #category') as any;
-		if (k) dataFrame['description'] = k.value;
-		if (c) dataFrame['category'] = c.value;
-		item_specs = Object.keys(dataFrame).filter((e) => (item_specs_exclude.includes(e) ? null : e));
+		if (k) dataFrame.data['description'] = k.value;
+		if (c) dataFrame.data['category'] = c.value;
+		item_specs = Object.keys(dataFrame.data).filter((e) =>
+			item_specs_exclude.includes(e) ? null : e
+		);
 		item_specs = item_specs.sort();
-		dataFrame.loves = loves;
-		dataFrame.rating = rating;
-		dataFrame.views = views;
+		dataFrame.data.loves = loves;
+		dataFrame.data.rating = rating;
+		dataFrame.data.views = views;
 		if (!dataFrame.images || !dataFrame.images.length) {
 			message = { message: 'Select at least one device image!', variant: 'alert' };
 			return 0;
 		}
-		if (dataFrame.headers.length < 4) {
+		if (dataFrame.data.headers.length < 4) {
 			message = { message: 'Add 4 or 5 device headers text!', variant: 'alert' };
 			return 0;
 		}
-		if (dataFrame.keywords === '') {
+		if (dataFrame.data.keywords === '') {
 			message = { message: 'Please add some keywords!', variant: 'alert' };
 			return 0;
 		}
-		if (dataFrame.slug === '') {
+		if (dataFrame.data.slug === '') {
 			message = { message: 'Please enter a slug!', variant: 'alert' };
 			return 0;
 		}
-		if (dataFrame.category === '' || dataFrame.category === 'un-selected') {
+		if (dataFrame.data.category === '' || dataFrame.data.category === 'un-selected') {
 			message = { message: 'Please select a category of device!', variant: 'alert' };
 			return 0;
 		}
@@ -295,14 +308,14 @@
 		const spec_value: any = document.getElementById('new-spec-value');
 		updateMessages({ message: false });
 		if (spec_title.value !== '') {
-			if (Object.keys(dataFrame).includes(spec_title.value.toLowerCase()))
+			if (Object.keys(dataFrame.data).includes(spec_title.value.toLowerCase()))
 				updateMessages({
 					message: 'Specification title is already exist!',
 					variant: 'alert'
 				});
 			else if (spec_name.value !== '') {
 				if (spec_value.value !== '') {
-					dataFrame[spec_title.value] = [{ [spec_name.value]: spec_value.value }];
+					dataFrame.data[spec_title.value] = [{ [spec_name.value]: spec_value.value }];
 					item_specs.push(spec_title.value);
 					spec_title.value = '';
 					spec_name.value = '';
@@ -320,17 +333,17 @@
 		} else updateMessages({ message: 'Add a title of new specification.', variant: 'danger' });
 	};
 	const removeKeyword = (keyword: string) => {
-		dataFrame.keywords = dataFrame.keywords.replace(keyword + ',', '');
+		dataFrame.data.keywords = dataFrame.data.keywords.replace(keyword + ',', '');
 	};
 	const addKeywords = (e: any) => {
 		if (e.target.value.includes(',')) {
-			if (!dataFrame.keywords.includes(e.target.value))
-				dataFrame.keywords += e.target.value.trim() + ' ';
+			if (!dataFrame.data.keywords.includes(e.target.value))
+				dataFrame.data.keywords += e.target.value.trim() + ' ';
 			e.target.value = '';
 		}
 	};
 	const addToHeader = (id: string) => {
-		if (dataFrame.headers.length >= $static_data.settings.deviceViewHeaderTextLength) {
+		if (dataFrame.data.headers.length >= $static_data.settings.deviceViewHeaderTextLength) {
 			updateMessages({
 				message: `headers limit is ${$static_data.settings.deviceViewHeaderTextLength} we can't add more.`,
 				variant: 'alert'
@@ -341,7 +354,7 @@
 		if (value instanceof HTMLInputElement || value instanceof HTMLTextAreaElement)
 			value = value.value;
 
-		if (dataFrame.headers.includes(value)) {
+		if (dataFrame.data.headers.includes(value)) {
 			updateMessages({
 				message: `(${value}) already exist on headers.`,
 				variant: 'alert'
@@ -349,7 +362,7 @@
 			return 0;
 		}
 		if (value !== '') {
-			dataFrame.headers = [...dataFrame.headers, value];
+			dataFrame.data.headers = [...dataFrame.data.headers, value];
 			headersToString();
 			updateMessages({ message: `(${value}) added to headers.`, variant: 'success' });
 		}
@@ -360,7 +373,7 @@
 		let x: any = [];
 		for (let t of h) if (!x.includes(t.trim()) && t !== '') x.push(t.trim());
 		x = x.slice(0, $static_data.settings.deviceViewHeaderTextLength);
-		dataFrame.headers = x;
+		dataFrame.data.headers = x;
 		headersToString();
 		if (h.length > $static_data.settings.deviceViewHeaderTextLength) {
 			updateMessages({
@@ -382,8 +395,8 @@
 	};
 	const __npc = (e: Event): void => {
 		if (e.target instanceof HTMLInputElement) {
-			if (e.target.name === 'is-active') dataFrame.isActive = e.target?.checked;
-			else dataFrame.is_new = e.target?.checked;
+			if (e.target.name === 'is-active') dataFrame.data.isActive = e.target?.checked;
+			else dataFrame.data.is_new = e.target?.checked;
 		}
 	};
 	const shiftImage = (shift: string, cur_index: number): void => {
@@ -399,35 +412,38 @@
 		filesList.splice(index, 1);
 		filesList = filesList;
 		if (typeof dataFrame.images[index] === 'string') {
-			if (dataFrame.removeImages) dataFrame.removeImages.push(dataFrame.images[index]);
-			else dataFrame.removeImages = [dataFrame.images[index]];
+			if (dataFrame.info.removeImages) dataFrame.info.removeImages.push(dataFrame.images[index]);
+			else dataFrame.info.removeImages = [dataFrame.images[index]];
 		}
 		dataFrame.images.splice(index, 1);
 		dataFrame.images = dataFrame.images;
-		dataFrame.removeImages = dataFrame.removeImages;
+		dataFrame.info.removeImages = dataFrame.info.removeImages;
 	};
 	const removeFromTrash = (index: number): void => {
-		filesList = [...filesList, dataFrame.removeImages[index]];
-		dataFrame.images.push(dataFrame.removeImages[index]);
-		dataFrame.removeImages.splice(index, 1);
-		dataFrame.removeImages = dataFrame.removeImages;
+		filesList = [...filesList, dataFrame.info.removeImages[index]];
+		dataFrame.images.push(dataFrame.info.removeImages[index]);
+		dataFrame.info.removeImages.splice(index, 1);
+		dataFrame.info.removeImages = dataFrame.info.removeImages;
 	};
 	const removeFromSpecs = (specs: string, spec: string = ''): void => {
 		if (spec === '') {
-			dataFrame[specs] = [];
+			dataFrame.data[specs] = [];
 			objectsToDelete[specs] = '';
 		} else {
-			let n = dataFrame[specs].filter((e: any) => Object.keys(e)[0] !== spec);
-			dataFrame[specs] = n;
+			let n = dataFrame.data[specs].filter((e: any) => Object.keys(e)[0] !== spec);
+			dataFrame.data[specs] = n;
 		}
 	};
-	const handleSlug = (e:Event):void=>{
-		if(e.target instanceof HTMLInputElement){
-			let v = e.target.value.replaceAll(/\s|\W|[_]/gi, '-').replaceAll(/-{1,}/gi, '-').toLowerCase()
-			if(v.at(-1) === '-') v = v.substring(0, v.length - 1)
-			dataFrame.slug = v
+	const handleSlug = (e: Event): void => {
+		if (e.target instanceof HTMLInputElement) {
+			let v = e.target.value
+				.replaceAll(/\s|\W|[_]/gi, '-')
+				.replaceAll(/-{1,}/gi, '-')
+				.toLowerCase();
+			if (v.at(-1) === '-') v = v.substring(0, v.length - 1);
+			dataFrame.data.slug = v;
 		}
-	}
+	};
 </script>
 
 <div class="modal">
@@ -528,17 +544,17 @@
 						<label for="category">DEVICE CATEGORY</label>
 						<select name="_y_category" id="category">
 							{#if $modal.action === 'new'}
-								<option selected disabled value='un-selected'>Select Device Category</option>
-							{:else if !cats.length}
-								<option selected value={item.category}>{item.category}</option>
+								<option selected disabled value="un-selected">Select Device Category</option>
 							{/if}
-							{#each cats as cat}
-								{#if $modal.action !== 'new' && cat.category === item.category}
-									<option selected value={cat.category}>{cat.category}</option>
-								{:else}
-									<option value={cat.category}>{cat.category}</option>
-								{/if}
-							{/each}
+							{#if Array.isArray(cats)}
+								{#each cats as cat}
+									{#if $modal.action === 'edit' && cat._id === dataFrame.data.category}
+										<option selected value={cat._id}>{cat.category}</option>
+									{:else}
+										<option value={cat._id}>{cat.category}</option>
+									{/if}
+								{/each}
+							{/if}
 						</select>
 					</div>
 				</div>
@@ -641,12 +657,12 @@
 						</div>
 					{/each}
 				</div>
-				{#if dataFrame.removeImages && dataFrame.removeImages.length}
+				{#if dataFrame.info.removeImages && dataFrame.info.removeImages.length}
 					<span style="font-size: 12px;color:orangered;"
 						>Image Trash (Trash images will be permanently deleted after saving)</span
 					>
 					<div class="flex-yxz image-list" style="background:#b4222233">
-						{#each dataFrame.removeImages as file, index}
+						{#each dataFrame.info.removeImages as file, index}
 							<div class="image-view">
 								<button
 									title="Add back to the image list"
@@ -665,7 +681,7 @@
 					</div>
 				{/if}
 				{#each item_specs as specs}
-					{#if dataFrame[specs].length}
+					{#if dataFrame.data[specs].length}
 						<div class="add-spec-item">
 							<h3 class="spec-item-title" id={'__' + specs} data-original={specs} contenteditable>
 								{specs}
@@ -687,7 +703,7 @@
 							>
 						</div>
 						<div class="flex-yxz spec-items" id="{specs.replaceAll(' ', '---')}-super">
-							{#each dataFrame[specs] as spec, item_index}
+							{#each dataFrame.data[specs] as spec, item_index}
 								{#each Object.keys(spec) as key}
 									<div class="a03x c-88323">
 										<button
@@ -779,8 +795,8 @@
 				<div class="flex-yxz">
 					<h3 class="spec-item-title">KEYWORDS</h3>
 					<div class="keywords-list">
-						{#if dataFrame.keywords}
-							{#each dataFrame.keywords.split(',') as keyword}
+						{#if dataFrame.data.keywords}
+							{#each dataFrame.data.keywords.split(',') as keyword}
 								{#if keyword.length > 2}
 									<span>
 										{keyword}
@@ -836,7 +852,7 @@
 							<input
 								type="text"
 								name="_y_slug"
-								value={item.slug ?? dataFrame.slug ?? ''}
+								value={item.slug ?? dataFrame.data.slug ?? ''}
 								id="slug"
 								placeholder="Enter device slug here..."
 							/>

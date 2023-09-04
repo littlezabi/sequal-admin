@@ -8,16 +8,21 @@
 		toggleTheme,
 		messages,
 		updateMessages,
-		updateStaticData
+		updateStaticData,
+		promptModal
 	} from '../lib/store';
 	import Footer from '$compo/footer.svelte';
 	import { CheckCircle, ExclamationTriangle, Icon, XMark } from 'svelte-hero-icons';
 	import { fade } from 'svelte/transition';
 	import type { PageData } from './$types';
+	import PromptModal from '$compo/prompt-modal.svelte';
+	import { staticBody } from '$lib/globals';
 	export let data: PageData;
 	$: data, updateStaticData({ settings: JSON.parse(data.settings) });
+	let pageLoad:boolean = false
 	onMount(() => {
 		toggleTheme(window.localStorage.getItem('theme'));
+		pageLoad = true;
 	});
 	let closingModalInterval: any = undefined;
 	$: $messages, closeModal();
@@ -27,11 +32,16 @@
 			updateMessages();
 		}, 5000);
 	};
+	$: $promptModal.visible, pageLoad && staticBody($promptModal.visible)
+		
 </script>
 
 <div id="main-container" class:dark={$themeStore === 'dark'}>
 	<Header />
 	<main class="page-size">
+		{#if $promptModal.visible}
+			<PromptModal />
+		{/if}
 		{#if $messages.message}
 			<div class="g-messages {$messages.variant}" transition:fade>
 				<div class="flex">

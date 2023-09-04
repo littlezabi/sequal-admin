@@ -73,6 +73,15 @@
         }
     }
 }
+.bg-danger{
+    background: rgb(var(--color-danger)) !important;
+}
+.bg-success{
+    background: rgb(var(--color-success)) !important;
+}
+.bg-alert{
+    background: rgb(var(--color-alert)) !important;
+}
 .mobile-view-list {
     box-shadow: var(--common-shadow);
     padding: 20px;
@@ -88,7 +97,7 @@
         & thead,
         & tfoot {
             & th {
-                padding: 0 23px;
+                padding: 0 4px 0 20px;
                 text-align: left;
             }
             height: 58px;

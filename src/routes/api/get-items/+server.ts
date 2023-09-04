@@ -1,29 +1,17 @@
 import database from '$lib/database';
 import countries from '$lib/assets/countries.json';
 import { authenticateAdmin } from '$lib/users';
-import { adminLogin, checkUsername, emptyRequest, getSmartDevices } from './get-items';
+import { adminLogin, checkUsername, dataCount, emptyRequest, getSmartDevices } from './get-items';
 
 await database.connect();
 export const POST = async ({ request, cookies }: any) => {
 	const body = await request.json();
 	if (body.adminLogin) return adminLogin(body);
-	// Above code run without authenticating admin.
-	/* let authenticated = await authenticateAdmin(
-		cookies.get('admin'),
-		request.headers.get('admin_key')
-	);
-	if (!authenticated) {
-		cookies.delete('admin');
-		return new Response(
-			JSON.stringify({
-				message: 'Admin Authentication Failed!',
-				success: 0,
-				error: 'unauthenticated_user'
-			})
-		);
-	} */ else return emptyRequest();
+	else return emptyRequest();
 };
 export const GET = async ({ url, cookies, request }: any) => {
+	if (url.searchParams.get('count-items')) return dataCount();
+
 	let authenticated = await authenticateAdmin(
 		cookies.get('admin'),
 		request.headers.get('admin_key')

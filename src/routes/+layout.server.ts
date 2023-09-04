@@ -10,7 +10,9 @@ export const load: PageServerLoad = async ({ cookies, url }: any) => {
 			throw redirect(303, '/login');
 		}
 	}
+	const settings = await getSettings();
+	cookies.set('item-per-page', settings['itemsPerPage'])
 	return {
-		settings: JSON.stringify(await getSettings())
+		settings: JSON.stringify(settings)
 	};
 };

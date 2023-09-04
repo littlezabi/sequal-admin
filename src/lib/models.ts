@@ -158,7 +158,7 @@ const laptopsSchema = new mongoose.Schema(
 	{
 		name: { type: String, required: true },
 		image: { type: Object, required: true },
-		category: { type: Object, required: true },
+		category: {type: mongoose.Schema.Types.ObjectId, ref: 'categories'},
 		slug: { type: Object, required: true },
 		original: { type: String, required: false },
 		views: { type: Number, default: 0, required: false },
@@ -181,7 +181,7 @@ const smartSchema = new mongoose.Schema(
 		loves: { type: Number, default: 0 },
 		rating: {type: Number, default: 5.0},
 		slug: { type: String, required: true, unique: true },
-		category: { type: String, required: true },
+		category: { type: mongoose.Types.ObjectId, required: true },
 		is_new: { type: Boolean, required: true },
 		isActive: { type: Boolean, default: true },
 		headers: { type: Array, required: true },
@@ -197,8 +197,8 @@ const categoriesSchema = new mongoose.Schema(
 	{
 		category: { type: String, required: true },
 		type: { type: String, required: true },
-		items: { type: Number, required: true, default: 0 },
-		image: { type: String, required: true, default: '' }
+		items: { type: Number, default: 0 },
+		image: { type: String, required: true, default: '/images/logos/category.svg' }
 	},
 	{
 		timestamps: true,
@@ -232,7 +232,7 @@ const blogsSchema = new mongoose.Schema(
 );
 export const blogsModel: any = mongoose.models.blogs || mongoose.model('blogs', blogsSchema);
 export const categoriesModel: any =
-	mongoose.models['device-categories'] || mongoose.model('device-categories', categoriesSchema);
+	mongoose.models.categories || mongoose.model('categories', categoriesSchema);
 export const laptopsModel: any =
 	mongoose.models.laptops || mongoose.model('laptops', laptopsSchema);
 export const smartModel: any =

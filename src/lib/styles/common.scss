@@ -21,12 +21,29 @@ body {
         background-color: #4b3fff;
 
       }
+      transition: background 300ms linear;
 }
 
 li {
     list-style: none;
 }
-
+.ul-top{
+    & svg{
+        border-radius: 50%;
+        width: 28px;
+        height: 28px;
+        padding: 2px;
+        display: block;
+        border: 2px solid transparent;
+        color: var(--elements-hover);
+    }
+    & a.active{
+        & svg{
+            border-color: #9c8aa987;
+            background: #b7b6b84a;
+        }
+    }
+}
 a {
     text-decoration: none;
     color: var(--primary-color);
@@ -177,7 +194,7 @@ h2 span svg {
 }
 svg, img {
     &.list-image {
-        border: 2px solid var(--svg-light);
+        border: 2px solid #97979787;
         border-radius: 50% !important;
         padding: 7px;
         width: 30px;

@@ -42,7 +42,7 @@
 	}
 	document.querySelector('body')?.classList.add('modal-open');
 	const handleClose = () => {
-		if (changesHappened) location.href = `/users?view=${admin ? 'admins' : 'clients'}`;
+		if (changesHappened) location.href = `/users/${admin ? 'admins' : 'clients'}`;
 		modalUpdate({ visible: false });
 		document.querySelector('body')?.classList.remove('modal-open');
 	};

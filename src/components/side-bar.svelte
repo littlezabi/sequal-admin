@@ -1,4 +1,6 @@
 <script lang="ts">
+	 import { page } from "$app/stores";
+
 	import {
 		Icon,
 		ChartPie,
@@ -11,11 +13,12 @@
 		Users,
 		ChatBubbleBottomCenterText,
 		ChevronLeft,
-
-		Tag
-
+		Tag,
+		UserGroup
 	} from 'svelte-hero-icons';
 	let sideBarClose = true;
+	let current_path = '/'
+	$:$page.url.pathname, current_path = $page.url.pathname
 </script>
 
 <div class="side-bar" class:close={sideBarClose}>
@@ -28,61 +31,61 @@
 	</button>
 	<ul class="ul-top">
 		<li>
-			<a class="flex" href="/">
+			<a class={current_path === '/' ? 'flex active' : "flex"} href="/">
 				<Icon src={ChartPie} />
 				<span>Dashboard</span>
 			</a>
 		</li>
 		<li>
-			<a class="flex" href="/mobiles">
+			<a class={current_path === '/mobiles' ? 'flex active' : "flex"} href="/mobiles">
 				<Icon src={DevicePhoneMobile} />
 				<span>Mobile Phones</span>
 			</a>
 		</li>
 		<li>
-			<a class="flex" href="/">
+			<a class={current_path === '/computers' ? 'flex active' : "flex"} href="/computers">
 				<Icon src={ComputerDesktop} />
 				<span>Computer & Laptops</span>
 			</a>
 		</li>
 		<li>
-			<a class="flex" href="/">
+			<a class={current_path === '/firmwares' ? 'flex active' : "flex"} href="/">
 				<Icon src={CpuChip} />
 				<span>Firmware's</span>
 			</a>
 		</li>
 		<li>
-			<a class="flex" href="/blogs">
+			<a class={current_path === '/blogs' ? 'flex active' : "flex"} href="/blogs">
 				<Icon src={ClipboardDocument} />
 				<span>Blogs</span>
 			</a>
 		</li>
 		<li>
-			<a class="flex" href="/files">
+			<a class={current_path === '/files' ? 'flex active' : "flex"} href="/files">
 				<Icon src={Photo} />
 				<span>Files</span>
 			</a>
 		</li>
 		<li>
-			<a class="flex" href="/categories">
+			<a class={current_path === '/categories' ? 'flex active' : "flex"} href="/categories">
 				<Icon src={Tag} />
 				<span>Categories</span>
 			</a>
 		</li>
 		<li>
-			<a class="flex" href="/users">
+			<a class={current_path === '/users/clients' ? 'flex active' : "flex"} href="/users/clients" title="users clients">
+				<Icon src={UserGroup} />
+				<span>Users clients</span>
+			</a>
+		</li>
+		<li>
+			<a class={current_path === '/users/admin' ? 'flex active' : "flex"} href="/users/admin" title="users admin">
 				<Icon src={Users} />
-				<span>Users</span>
+				<span>Users admin</span>
 			</a>
 		</li>
 		<li>
-			<a class="flex" href="/">
-				<Icon src={ChatBubbleBottomCenterText} />
-				<span>Users</span>
-			</a>
-		</li>
-		<li>
-			<a class="flex" href="/">
+			<a class={current_path === '/informations' ? 'flex active' : "flex"} href="/">
 				<Icon src={InformationCircle} />
 				<span>Informations</span>
 			</a>

@@ -2,7 +2,8 @@
 	import Categories from '$compo/categories.svelte';
 	import { PUBLIC_IMAGES_FETCH_URI, PUBLIC_PHONE_IMAGE_FOLDER } from '$env/static/public';
 	import { getRandomColor, life } from '$lib/globals';
-	import { modal, modalUpdate } from '$lib/store';
+	import { modal, modalUpdate, promptModalUpdate, updateMessages } from '$lib/store';
+	import axios from 'axios';
 	import type { PageData } from './$types';
 	import {
 		Icon,
@@ -23,7 +24,10 @@
 		Bolt,
 		ChartBarSquare,
 		DocumentChartBar,
-		Cog8Tooth
+		Cog8Tooth,
+
+		Trash
+
 	} from 'svelte-hero-icons';
 	export let data: PageData;
 	let categories = JSON.parse(data.categories);
@@ -33,7 +37,6 @@
 		by = by.target.value.split('_')[0];
 		let comp_a = order === 'asc' ? 1 : -1;
 		let comp_b = order === 'desc' ? 1 : -1;
-        console.log(by)
 		list = categories.sort((a: any, b: any) => {
 			if (a[by] > b[by]) return comp_a;
 			if (a[by] < b[by]) return comp_b;
@@ -43,6 +46,42 @@
 	const handleEdit = (item: any) => {
         modalUpdate({ visible: true, item: item, title: item.category, action:'edit' });
     };
+	const handleDelete = (item: any) => {
+		promptModalUpdate({
+			visible: true,
+			title: `CONFIRM DELETE`,
+			description: `Are you sure you want to delete the category '${item.category}'? Please proceed with caution, as this action is irreversible and cannot be undone.`,
+			confirm: [
+				{
+					title: 'DELETE',
+					class: 'bg-danger',
+					callback: async () => {
+						await axios
+							.post(
+								'/api/delete-items',
+								{ _id: item._id, image: item.image },
+								{ headers: { requestFor: 'deleteCategory' } }
+							)
+							.then((e) => {
+								updateMessages({
+									message: e.data.message,
+									variant: e.data.success ? 'success' : 'alert'
+								});
+								if (e.data.success) list = list.filter((e: any) => e._id !== item._id);
+								promptModalUpdate({ visible: false });
+							})
+							.catch((e) => console.error(e));
+					},
+					type: 'button'
+				},
+				{
+					title: 'CANCIL',
+					callback: () => promptModalUpdate({ visible: false }),
+					type: 'button'
+				}
+			]
+		});
+	};
 </script>
 {#if $modal.visible}
 	<Categories />
@@ -51,8 +90,8 @@
 	<div class="head">
 		<p>Change categories setting</p>
 		<div>
-			<button class="btn flex">
-				<span>NEW DEVICE</span>
+			<button class="btn flex" type="button" on:click={()=> modalUpdate({ visible: true, item: {}, title: 'Add new category', action:'new' })}>
+				<span>NEW CATEGORY</span>
 				<Icon src={Plus} />
 			</button>
 		</div>
@@ -127,7 +166,12 @@
 						<td class="item-cat">{item.category}</td>
 						<td>{item.type}</td>
 						<td>{item.items}</td>
-						<button on:click={() => handleEdit(item)}><Icon src={Wrench} /></button>
+						<td>
+							<button on:click={() => handleEdit(item)}><Icon src={Wrench} /></button>
+							<button title="Delete" style="margin-left: 8px;" on:click={() => handleDelete(item)}
+								><Icon src={Trash} /></button
+							>
+						</td>
 					</tr>
 				{/each}
 			</tbody>

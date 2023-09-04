@@ -43,7 +43,7 @@ export const handleUser = async (formData:any) => {
 			getRandomChar(12, { numbers: false, lowercase: true }) + '.' + file.name.split('.').pop();
 		const arrayBuffer = await file.arrayBuffer();
 		const resizedImage = await sharp(arrayBuffer).resize({ width: profileWidth }).toBuffer();
-		const filePath = join(PUBLIC_IMAGES_STATIC_PATH + 'users', avatar);
+		const filePath = join(PUBLIC_IMAGES_STATIC_PATH + '/images/users', avatar);
 		writeFileSync(filePath, resizedImage);
 	} else avatar = '';
 	form.avatar = avatar;

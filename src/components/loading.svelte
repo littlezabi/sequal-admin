@@ -1,6 +1,7 @@
 <script lang="ts">
 	export let loading_lines: number = 1;
 	export let type: string = 'wave';
+	export let width:number = 0
 	const line_arr = new Array(loading_lines).fill(1);
 	const getWidth = () => {
 		let w = () => Math.ceil(Math.random() * 100 + 10);
@@ -19,7 +20,7 @@
 {:else}
 	<div class="loading">
 		{#each line_arr as line}
-			<span style="width: {getWidth()}%" />
+			<span style="width: {width ? width : getWidth()}%" />
 		{/each}
 	</div>
 {/if}

@@ -1,8 +1,34 @@
-import { Admin, categoriesModel, smartModel } from '$lib/models';
+import {
+	Admin,
+	Announcments,
+	Firmwares,
+	Users,
+	blogsModel,
+	categoriesModel,
+	firmwareCategories,
+	laptopsModel,
+	reviewsModel,
+	smartModel
+} from '$lib/models';
 import { generateJWT } from '$lib/users';
 import bcrypt from 'bcryptjs';
 
-export const getSmartDevices = async (_id: string|number, getCats: any) => {
+export const dataCount = async () => {
+	const counter = {
+		mobiles: await smartModel.count(),
+		computers: await laptopsModel.count(),
+		blogs: await blogsModel.count(),
+		clients: await Users.count(),
+		admin: await Admin.count(),
+		reviews: await reviewsModel.count(),
+		announcments: await Announcments.count(),
+		firmwareCategories: await firmwareCategories.count(),
+		firmwares: await Firmwares.count(),
+		categories: await categoriesModel.count()
+	};
+	return new Response(JSON.stringify({ counter }), { status: 200 });
+};
+export const getSmartDevices = async (_id: string | number, getCats: any) => {
 	let cats = [];
 	let item: any = undefined;
 	if (_id != 0)
@@ -11,14 +37,18 @@ export const getSmartDevices = async (_id: string|number, getCats: any) => {
 			{
 				_id: 0,
 				title: 0,
-				category: 0,
 				image: 0,
 				integrity: 0,
 				createdAt: 0,
-				isActive: 0
+				isActive: 0,
+				updatedAt: 0,
+				original: 0
 			}
 		);
-	if (Number(getCats)) cats = await categoriesModel.find({}, { image: 0 }).lean();
+	if (getCats != 0)
+		cats = await categoriesModel
+			.find({ type: getCats }, { image: 0, items: 0, type: 0, updatedAt: 0, createdAt: 0 })
+			.lean();
 	return new Response(JSON.stringify({ item, cats }), { status: 200 });
 };
 export const checkUsername = async (username: string) => {

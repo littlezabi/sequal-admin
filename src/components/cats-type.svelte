@@ -1,39 +1,83 @@
 <script lang="ts">
 	import { Cog6Tooth, Icon, Plus, Trash } from 'svelte-hero-icons';
 	import Loading from './loading.svelte';
+	import { promptModalUpdate, updateMessages } from '$lib/store';
 
-    export let updateCats:any;
-	export let categories:any;
+	export let updateCats: any;
+	export let categories: any;
 
-    let loading = false;
+	let loading = false;
 	let newCat = '';
 	let message: any = false;
 	let checking: any = undefined;
 	const handleEdit = async (index: number): Promise<void> => {
-		let d = prompt(
-			`Change the type name but keep in mind if name is exist then no changes happen.`,
-			categories[index]
-		);
-		if (d && d.length) {
-			d = d.toLowerCase();
-			if (categories.includes(d.toLowerCase())) {
-				message = { message: 'Category type is already exist!', variant: 'alert' };
-				alert('Category type is already exist!');
-			} else {
-				categories = categories.map((e: string) => {
-					if (e === categories[index]) return d;
-					return e;
-				});
-				await updateCats(categories).then(()=>loading = false);
+		promptModalUpdate({
+			visible: true,
+			title: `Change category type name`,
+			description: `Change the type name but keep in mind if name is exist then no changes happen.`,
+			form: {
+				inputs: [
+					{
+						label: 'Enter category type name here.',
+						type: 'text',
+						placeholder: 'Enter category type name...',
+						name: 'type-name',
+						value: categories[index]
+					}
+				],
+				buttons: [
+					{ type: 'submit', title: 'ADD' },
+					{ title: 'CANCIL', callback: () => promptModalUpdate({ visible: false }), type: 'button' }
+				],
+				onSubmit: async (e: any) => {
+					let d = e.target['type-name'].value;
+					if (d && d.length) {
+						d = d.toLowerCase();
+						if (categories.includes(d.toLowerCase())) {
+							updateMessages({ message: 'Category type is already exist!', variant: 'alert' });
+						} else {
+							categories = categories.map((e: string) => {
+								if (e === categories[index]) return d;
+								return e;
+							});
+							promptModalUpdate({ visible: false });
+							await updateCats(categories).then(() => (loading = false));
+						}
+					} else {
+						updateMessages({
+							message: 'Please enter the name of category type.',
+							variant: 'alert'
+						});
+					}
+				}
 			}
-		}
+		});
 	};
 	const handleDelete = (index: number): void => {
-		const c = confirm('Do you want to delete this type!');
-		if (c) {
-			categories = categories.filter((e: string) => e !== categories[index]);
-			updateCats(categories);
-		}
+		promptModalUpdate({
+			visible: true,
+			title: `CONFIRM DELETE CATEGORY TYPE`,
+			description: `
+				Are you sure you want to delete the category type '${categories[index]}'? Please proceed with caution, as this action is irreversible and cannot be undone.
+			`,
+			confirm: [
+				{
+					title: 'YES',
+					class: 'bg-danger',
+					callback: async () => {
+						categories = categories.filter((e: string) => e !== categories[index]);
+						promptModalUpdate({ visible: false });
+						updateCats(categories);
+					},
+					type: 'button'
+				},
+				{
+					title: 'NO',
+					callback: () => promptModalUpdate({ visible: false }),
+					type: 'button'
+				}
+			]
+		});
 	};
 	const handleCheck = (e: Event) => {
 		loading = true;
@@ -54,10 +98,9 @@
 		if (!categories.includes(newCat)) {
 			loading = true;
 			categories = [...categories, newCat];
-			await updateCats(categories).then(()=>loading = false);
+			await updateCats(categories).then(() => (loading = false));
 		} else message = { message: 'Category type is already exist!', variant: 'alert' };
 	};
-	
 </script>
 
 <div>

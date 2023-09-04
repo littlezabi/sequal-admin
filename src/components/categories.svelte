@@ -2,7 +2,7 @@
 	import axios from 'axios';
 	import { ArrowDownCircle, Icon, Photo, XMark } from 'svelte-hero-icons';
 	import { modal, modalUpdate, static_data, updateMessages, updateStaticData } from '$lib/store';
-	import { PUBLIC_IMAGES_FETCH_URI, PUBLIC_PHONE_IMAGE_FOLDER } from '$env/static/public';
+	import { PUBLIC_IMAGES_FETCH_URI } from '$env/static/public';
 	import Loading from './loading.svelte';
 	import { fade, slide } from 'svelte/transition';
 	import CustomNumberInput from './custom-number-input.svelte';
@@ -10,7 +10,7 @@
 	let message: any = false;
 	$: message, updateMessages(message);
 	let item = $modal.item;
-	let dataframe: any = {...item, old_image:item.image};
+	let dataframe: any = { ...item, old_image: item.image, old_category_name: item.category};
 	let cat_logo: any = '';
 	let items: number = item.items;
 	let loading = false;
@@ -22,15 +22,43 @@
 		if (changesHappened) location.href = `/categories`;
 	};
 	const handleForm = async () => {
-        dataframe.items = items
-        console.log(dataframe)
-        axios.post('api/update-items', items,{headers: {requestFor: "updateCategories"}})
-        .then((res)=>{
-            console.log(res.data)
-        }).catch((e)=> {
-            console.error(e)
-        })
-    };
+		loading = true;
+		dataframe.items = items;
+		let df = dataframe;
+		console.log(df)
+		if (df.category === '') {
+			message = { message: 'Please enter category name!', variant: 'danger' };
+			return 0;
+		}
+		if (df.type === 'un-selected') {
+			message = { message: 'Please select category type!', variant: 'danger' };
+			return 0;
+		}
+		const form = new FormData();
+		if (df.image && typeof df.image !== 'string') {
+			form.append('image', df.image);
+			if ($modal.action === 'edit') form.append('old_image', df.old_image);
+			delete df.image;
+		}
+		if ($modal.action === 'edit') {
+			form.append('_id', df._id);
+			delete df._id;
+		}
+		delete df.old_image;
+		form.append('df', JSON.stringify(df));
+		axios
+			.post(`api/${$modal.action === 'edit' ? 'update-items' : 'set-items'}`, form, { headers: { requestFor: $modal.action === 'edit' ? 'updateCategories' : 'newCategory' } })
+			.then((res) => {
+				changesHappened = true;
+				loading = false;
+				if (res.data?.success) message = { message: res.data.message, variant: 'success' };
+				else message = { message: `Error ${res.data.message}`, variant: 'danger' };
+			})
+			.catch((e) => {
+				loading = false;
+				console.error(e);
+			});
+	};
 	const __ixq = (): void => {
 		const element = document.querySelector('#phone-image') as HTMLElement;
 		element.click();
@@ -73,7 +101,6 @@
 	const handleInputs = (e: Event) => {
 		let v = e.target as HTMLInputElement;
 		dataframe[v.name] = v.value;
-		console.log(dataframe);
 	};
 </script>
 
@@ -86,7 +113,7 @@
 				You can add new, update or delete the categories. take any action carefully there is no
 				change to undo your actions.
 			</p>
-			<form on:submit={handleForm} id="phone-form">
+			<form on:submit|preventDefault={handleForm} id="phone-form">
 				<div class="flex-yxz">
 					<div class="a03x full-w">
 						<label for="title">CATEGORY TITLE HERE</label>
@@ -105,9 +132,14 @@
 					<div class="a03x">
 						<label for="category">CATEGORY TYPE</label>
 						<select name="type" id="category" on:change={handleInputs}>
-							<option selected value="phones">Phones</option>
+							{#if $modal.action === 'new'}
+								<option disabled selected value="un-selected">Select category type</option>{/if}
 							{#each type_list as cat}
-								<option value={cat}>{cat}</option>
+								{#if item.type === cat}
+									<option selected value={cat}>{cat}</option>
+								{:else}
+									<option value={cat}>{cat}</option>
+								{/if}
 							{/each}
 						</select>
 					</div>
@@ -167,7 +199,11 @@
 						<CustomNumberInput bind:output={items} value={items} title={'Number of Items'} />
 					</div>
 				</div>
-				<input type="submit" value="SAVE" />
+				{#if loading}
+					<div style="margin:25px 78px;width:0;"><Loading type="spinner" /></div>
+				{:else}
+					<input type="submit" value="SAVE" />
+				{/if}
 				{#if typeof message === 'object' && message !== null}
 					<span
 						class="message {message.variant ? message.variant : 'success'}"

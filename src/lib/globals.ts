@@ -1,5 +1,15 @@
 import { bg40Colors, border40Colors } from './constant';
 
+    
+export const getPagination = (cookies:any, url:any)=>{
+	let page = Number(url.searchParams.get("p")) ?? 0;
+	let limit = Number(cookies.get('item-per-page') ?? 20)
+	let skip = Number(cookies.get('item-per-page') ?? 20)
+	page = page ? page - 1 : page
+	skip = page * skip
+	return {skip, limit, page}
+}
+
 export const life = (__time__: string) => {
 	/**
 	 * Format Datetime (Created by LittleZabi -> blueterminal Lab )
@@ -212,14 +222,21 @@ export const chartOptions = (title: any, xaxis: any, yaxis: any): {} => {
 	};
 };
 
-export const numberFormat = (__num__: number) => {
+export const numberFormat = (__num__: number):string => {
 	if (typeof __num__ === 'number')
 		return __num__ >= 1000000
 			? (__num__ / 1000000).toFixed(1) + 'M'
 			: __num__ >= 1000
 			? (__num__ / 1000).toFixed(1) + 'k'
 			: __num__.toString();
-	else return 0;
+	else return '0';
+};
+
+export const staticBody = (visibility: Boolean) => {
+	if (document) {
+		if (visibility) document.querySelector('body')?.classList.add('modal-open');
+		else document.querySelector('body')?.classList.remove('modal-open');
+	}
 };
 
 export const alterNumberFormat = (number: number) => {

@@ -12,59 +12,106 @@
 		BellSlash,
 		User,
 		UserPlus,
-		Clock
+		Clock,
+		Trash
 	} from 'svelte-hero-icons';
-	import { modal, modalUpdate } from '$lib/store';
+	import { modal, modalUpdate, promptModalUpdate, updateMessages } from '$lib/store';
 	import UserModal from '$compo/UserModal.svelte';
 	import { PUBLIC_IMAGES_FETCH_URI } from '$env/static/public';
+	import axios from 'axios';
+	import Pagination from '$compo/pagination.svelte';
+	import { fade, slide } from 'svelte/transition';
 	export let data: PageData;
-	let admins: any = JSON.parse(data.admins);
-	let clients: any = JSON.parse(data.users);
-	let admin_key:any = data.admin_key
-	let users:any = []
-	let old_action = 'clients';
-	if(data.view === 'admins'){
-		users = admins;
-		old_action = 'admins';
-	} 
-	else users = clients;
-
+	let admin: any = data.admin;
+	let clients: any = data.clients;
+	let users: any = [];
+	$: data.user_type,
+		(function () {
+			admin = data.admin;
+			clients = data.clients;
+			if (data.user_type === 'admin') {
+				users = admin;
+			} else users = clients;
+		})();
 	const sort = (by: any): any => {
 		let order = by.target.value.split('_').at(-1);
 		by = by.target.value.split('_')[0];
 		let comp_a = order === 'asc' ? 1 : -1;
 		let comp_b = order === 'desc' ? 1 : -1;
 		if (by === 'isActive') {
-			users = JSON.parse(old_action==='clients' ? data.users : data.admins).sort((a: any, b: any) => {
-				if (!a.active && b.active) return comp_a;
-				if (a.active && !b.active) return comp_b;
-				return 0;
-			});
+			users = JSON.parse(data.user_type === 'clients' ? data.clients : data.admin).sort(
+				(a: any, b: any) => {
+					if (!a.active && b.active) return comp_a;
+					if (a.active && !b.active) return comp_b;
+					return 0;
+				}
+			);
 		} else if (by === 'createdAt')
-			users = JSON.parse(old_action==='clients' ? data.users : data.admins).sort((a: any, b: any) => {
-				let x: any = new Date(a.createdAt);
-				let y: any = new Date(b.createdAt);
-				return x - y;
-			});
+			users = JSON.parse(data.user_type === 'clients' ? data.clients : data.admin).sort(
+				(a: any, b: any) => {
+					let x: any = new Date(a.createdAt);
+					let y: any = new Date(b.createdAt);
+					return x - y;
+				}
+			);
 		else
-			users = JSON.parse(old_action==='clients' ? data.users : data.admins).sort((a: any, b: any) => {
-				if (a[by] > b[by]) return comp_a;
-				if (a[by] < b[by]) return comp_b;
-				else return 0;
-			});
+			users = JSON.parse(data.user_type === 'clients' ? data.clients : data.admin).sort(
+				(a: any, b: any) => {
+					if (a[by] > b[by]) return comp_a;
+					if (a[by] < b[by]) return comp_b;
+					else return 0;
+				}
+			);
 	};
 	const handleEdit = (item: any) => {
-		modalUpdate({ visible: true, title:"EDIT USER PROFILE", action: 'edit', admin_key, user: item });
+		modalUpdate({
+			visible: true,
+			title: 'EDIT USER PROFILE',
+			action: 'edit',
+			user: item
+		});
 	};
-	const handleStylishButton = (action: string) => {
-		if (old_action === action) return 0;
-		if (action === 'clients') {
-			users = clients;
-		} else {
-			users = admins;
-		}
-		console.log(users);
-		old_action = action;
+	const handleDelete = (user: any) => {
+		promptModalUpdate({
+			visible: true,
+			title: `CONFIRM DELETE`,
+			description: `
+				You are requesting the permanent deletion of the user account '${
+					data.user_type === 'clients' ? user.firstname + ' ' + user.lastname : user.username
+				}'. Please proceed with caution, as after the user is deleted, they will no longer be able to log in, make purchases, post comments, write reviews, and perform other related actions.
+			`,
+			confirm: [
+				{
+					title: 'DELETE',
+					class: 'bg-danger',
+					callback: async () => {
+						await axios
+							.post(
+								'/api/delete-items',
+								{ _id: user._id, avatar: user.avatar, model: data.user_type },
+								{ headers: { requestFor: 'deleteUser' } }
+							)
+							.then((e) => {
+								updateMessages({
+									message: e.data.message,
+									variant: e.data.success ? 'success' : 'alert'
+								});
+								if (e.data.success) {
+									users = users.filter((e: any) => e._id !== user._id);
+								}
+								promptModalUpdate({ visible: false });
+							})
+							.catch((e) => console.error(e));
+					},
+					type: 'button'
+				},
+				{
+					title: 'CANCIL',
+					callback: () => promptModalUpdate({ visible: false }),
+					type: 'button'
+				}
+			]
+		});
 	};
 </script>
 
@@ -74,7 +121,7 @@
 <h2>Manage Users</h2>
 <div class="mobile-view-list">
 	<div class="head">
-		<p>You can add, remove, update users and admins.</p>
+		<p>You can add, remove, update {data.user_type} informations.</p>
 		<div>
 			<button
 				class="btn flex"
@@ -97,7 +144,7 @@
 		</span>
 	</div>
 	<div class="head">
-		<div class="flex">
+		<!-- <div class="flex">
 			<div class="flex">
 				<span>All clients</span>
 				<button
@@ -110,16 +157,16 @@
 			</div>
 
 			<div class="flex" style="margin-left: 30px;">
-				<span>All admins</span>
+				<span>All admin</span>
 				<button
-					class="btn-stylish {old_action === 'admins' ? 'active' : ''}"
+					class="btn-stylish {old_action === 'admin' ? 'active' : ''}"
 					id="btn-8ck3lx2"
-					on:click={(e) => handleStylishButton('admins')}
+					on:click={(e) => handleStylishButton('admin')}
 				>
 					<div />
 				</button>
 			</div>
-		</div>
+		</div> -->
 	</div>
 	<div class="container">
 		<table>
@@ -132,7 +179,7 @@
 							<span style="margin-left: 10px;">Avatar</span>
 						</div>
 					</th>
-					{#if old_action === 'clients'}
+					{#if data.user_type === 'clients'}
 						<th>
 							<div class="flex">
 								<Icon src={User} />
@@ -153,7 +200,7 @@
 							<span style="margin-left: 10px;">Email</span>
 						</div>
 					</th>
-					{#if old_action === 'clients'}
+					{#if data.user_type === 'clients'}
 						<th>
 							<div class="flex">
 								<Icon src={Bell} />
@@ -176,10 +223,10 @@
 				</tr>
 			</thead>
 			<tbody>
-				{#each users as item}
-					<tr class="item-section list" style={`background: ${getRandomColor(0.1)}`}>
-						<td class="item-index">{item.index}</td>
-						<td style="text-align:center;">
+				{#each users as item, index}
+					<tr class="fade-in item-section list" style={`background: ${getRandomColor(0.1)};animation-delay: ${index*100}ms`}>
+						<td class="item-index">{data.skip + (index + 1)}</td>
+						<td style="text-align:center;" class="xck393">
 							{#if item.avatar && item.avatar !== ''}
 								<img
 									class="list-image"
@@ -192,13 +239,13 @@
 								<Icon class="list-image" src={User} />
 							{/if}
 						</td>
-						{#if old_action === 'clients'}
+						{#if data.user_type === 'clients'}
 							<td class="item-name">{item.firstname} {item.lastname}</td>
 						{:else}
 							<td class="item-name">{item.username}</td>
 						{/if}
 						<td class="item-cat">{item.email}</td>
-						{#if old_action === 'clients'}
+						{#if data.user_type === 'clients'}
 							<td>
 								{#if item.notifyme}
 									<Icon src={BellAlert} />
@@ -210,7 +257,12 @@
 						<td>
 							{life(item.createdAt).from()}
 						</td>
-						<button on:click={() => handleEdit(item)}><Icon src={Wrench} /></button>
+						<td style="display:flex;">
+							<button title="Edit" on:click={() => handleEdit(item)}><Icon src={Wrench} /></button>
+							<button title="Delete" style="margin-left: 8px;" on:click={() => handleDelete(item)}
+								><Icon src={Trash} /></button
+							>
+						</td>
 					</tr>
 				{/each}
 			</tbody>
@@ -223,7 +275,7 @@
 							<span style="margin-left: 10px;">Avatar</span>
 						</div>
 					</th>
-					{#if old_action === 'clients'}
+					{#if data.user_type === 'clients'}
 						<th>
 							<div class="flex">
 								<Icon src={User} />
@@ -244,7 +296,7 @@
 							<span style="margin-left: 10px;">Email</span>
 						</div>
 					</th>
-					{#if old_action === 'clients'}
+					{#if data.user_type === 'clients'}
 						<th>
 							<div class="flex">
 								<Icon src={Bell} />
@@ -267,6 +319,7 @@
 				</tr>
 			</tfoot>
 		</table>
+		<Pagination renderFor={`/users/${data.user_type}`} counter_model={data.user_type} pageNo={data.page} />
 	</div>
 </div>
 
@@ -276,5 +329,10 @@
 		height: 69px;
 		padding: 0;
 	}
-	
+	.mobile-view-list .item-section .xck393 {
+		& img {
+			height: 62px;
+			width: 62px;
+		}
+	}
 </style>
