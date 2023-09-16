@@ -1,14 +1,49 @@
+import { PUBLIC_ENV } from '$env/static/public';
 import { bg40Colors, border40Colors } from './constant';
 
-    
-export const getPagination = (cookies:any, url:any)=>{
-	let page = Number(url.searchParams.get("p")) ?? 0;
-	let limit = Number(cookies.get('item-per-page') ?? 20)
-	let skip = Number(cookies.get('item-per-page') ?? 20)
-	page = page ? page - 1 : page
-	skip = page * skip
-	return {skip, limit, page}
-}
+export const parse = (json: {} | []) => {
+	if (json) return JSON.parse(JSON.stringify(json));
+	else return json;
+};
+export const getFilterAndCatTypes = (
+	url: any
+): { category: string; filter: string[] | boolean; ctype: string; sort: string[] } => {
+	let filter = url.get('filter') ?? false;
+	let ctype = url.get('category-type') ?? false;
+	let sort = url.get('sort') ?? false;
+	let category = url.get('category') ?? false;
+	if (filter) {
+		filter = filter.split('_');
+		if (filter[0] === 'all') filter = false;
+		else {
+			let f2: number | boolean | string = Number(filter[1]);
+			if (f2 || f2 === 0) f2 = f2 ? true : false;
+			filter = [filter[0], f2];
+		}
+	}
+	category = category !== 'all' ? category : false;
+	if (sort) {
+		sort = sort.split('_');
+		sort = [sort[0] === 'id' ? '_id' : sort[0], sort[1] === 'asc' ? 1 : -1];
+	}
+	return {
+		category: category,
+		filter: filter ? filter : false,
+		ctype: ctype ? (ctype === 'all' ? false : ctype) : false,
+		sort: sort ? sort : ['_id', 1]
+	};
+};
+export const getPagination = (cookies: any, url: any) => {
+	let page = Number(url.searchParams.get('p')) ?? 0;
+	let limit = Number(cookies.get('item-per-page') ?? 20);
+	let skip = Number(cookies.get('item-per-page') ?? 20);
+	page = page ? page : 0
+	limit = limit ? limit : 20
+	skip = !skip ? 20 : skip
+	page = page ? page - 1 : page;
+	skip = page * skip;
+	return { skip, limit, page };
+};
 
 export const life = (__time__: string) => {
 	/**
@@ -222,7 +257,7 @@ export const chartOptions = (title: any, xaxis: any, yaxis: any): {} => {
 	};
 };
 
-export const numberFormat = (__num__: number):string => {
+export const numberFormat = (__num__: number): string => {
 	if (typeof __num__ === 'number')
 		return __num__ >= 1000000
 			? (__num__ / 1000000).toFixed(1) + 'M'
@@ -239,6 +274,41 @@ export const staticBody = (visibility: Boolean) => {
 	}
 };
 
+export const setCookies: (
+	name: string,
+	value: string,
+	options?: {
+		expires?: number | Date;
+		maxAge?: number;
+		path?: string;
+		domain?: string;
+		secure?: boolean;
+		sameSite?: string;
+	}
+) => void = (name, value, options) => {
+	options = options ? options : {};
+	if (options?.expires) options.expires = new Date(Date.now() + 86400000 * Number(options.expires));
+	options.path = options.path ? options.path : '/';
+	options.secure = options.secure ? options.secure : PUBLIC_ENV === 'dev' ? false : true;
+	let cookies = `${name}=${value}`;
+	for (const option in options) {
+		if (options.hasOwnProperty(option)) {
+			if (option === 'maxAge') cookies += `;max-age=${options[option]}`;
+			// @ts-ignore
+			else cookies += `;${option}=${options[option]}`;
+		}
+	}
+	document.cookie = cookies;
+};
+export const getCookies = (name: string) => {
+	let cookies = document.cookie.split(';');
+	let value = null;
+	for (const c of cookies) {
+		let [n, v] = c.split('=');
+		if (n === name) return decodeURIComponent(v);
+	}
+	return value;
+};
 export const alterNumberFormat = (number: number) => {
 	const match = numberFormat(number).match(/^(\d+\.?\d*)(.*)$/);
 	if (match) return { counts: parseFloat(match[1]), postfix: match[2] };

@@ -1,7 +1,8 @@
 import mongoose from "mongoose";
 import { MONGO_DB } from "$env/static/private";
+import { PUBLIC_ENV } from "$env/static/public";
 
-let NODE_ENV = 'dev'
+let NODE_ENV = PUBLIC_ENV
 interface ConnectionsType {
   isConnected: boolean | any;
 }

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { fade } from 'svelte/transition';
-	import { promptModal } from '$lib/store';
+	import { promptModal, promptModalUpdate } from '$lib/store';
 </script>
 
 <div class="spec-input-modal" transition:fade>
@@ -9,7 +9,11 @@
 			<h2>{$promptModal.title}</h2>
 			{#if $promptModal.description}<p>{$promptModal.description}</p>{/if}
 			{#if $promptModal.form && $promptModal.form.inputs}
-				<form on:submit|preventDefault={$promptModal.form.onSubmit ? $promptModal.form.onSubmit : ()=>{}}>
+				<form
+					on:submit|preventDefault={$promptModal.form.onSubmit
+						? $promptModal.form.onSubmit
+						: () => {}}
+				>
 					<div class="flex-yxz">
 						{#each $promptModal.form.inputs as input, i}
 							<div class="a03x full-w">
@@ -39,8 +43,8 @@
 					{/if}
 				</form>
 			{/if}
-			{#if $promptModal.confirm}
-				<div class="flex-yxz">
+			<div class="flex-yxz">
+				{#if $promptModal.confirm}
 					{#each $promptModal.confirm as button}
 						<button
 							class={button.class ? button.class : ''}
@@ -48,11 +52,12 @@
 							on:click={button.callback ? button.callback : () => {}}>{button.title}</button
 						>
 					{/each}
-				</div>
-			{/if}
+				{/if}
+				{#if !$promptModal.remove_close_button}
+					<button type="button" on:click={() => promptModalUpdate({ visible: false })}>CLOSE</button
+					>
+				{/if}
+			</div>
 		</div>
 	</div>
 </div>
-
-<style>
-</style>

@@ -1,9 +1,5 @@
-import { writable } from 'svelte/store';
+import { writable, type Writable } from 'svelte/store';
 import cookies from 'js-cookie';
-
-export const themeStore = writable('dark');
-export const toggleTheme = (e: null | string) =>
-	themeStore.update((theme) => (e ? e : theme === 'dark' ? 'light' : 'dark'));
 
 export const modal: any = writable({ visible: false });
 export const modalUpdate = (item: any) => modal.update((modal: any) => item);
@@ -13,6 +9,7 @@ export const promptModalUpdate = (item: {
 	visible: boolean;
 	title?: String;
 	description?: String;
+	remove_close_button?: boolean,
 	form?: {
 		inputs?: {
 			label: string;
@@ -21,10 +18,10 @@ export const promptModalUpdate = (item: {
 			id?: string;
 			value?: string;
 			placeholder?: string;
-			callback?: () => void;
+			callback?: (e: Event) => void;
 			required?: boolean;
 		}[];
-		onSubmit?: (e?:any) => void;
+		onSubmit?: (e?: any) => void;
 		buttons?: {
 			title: string;
 			type?: any;
@@ -53,7 +50,12 @@ export const promptModalUpdate = (item: {
 	} else promptModal.update(() => item);
 };
 
-export const static_data: any = writable({ categories: [], settings: {}, countries: [], counter: false });
+export const static_data: any = writable({
+	categories: [],
+	settings: {no_settings: true},
+	countries: [],
+	counter: false
+});
 export const updateStaticData = (data: any) =>
 	static_data.update((items: any) => ({ ...items, ...data }));
 
@@ -62,9 +64,14 @@ export const adminSession: any = writable(
 );
 export const updateAdmin = (admin: any) => adminSession.update((user: any) => admin);
 
-export const messages: any = writable({ message: false, variant: 'success' });
-export const updateMessages: any = (new_message: any = false) =>
+interface Message{
+	message: string | boolean;
+	variant?: string | null;
+	closing_time?: number | null;
+}
+export const messages: Writable<Message> = writable({ message: false, variant: 'success', closing_time: 6000 });
+export const updateMessages: any = (new_message: Message|null) =>
 	messages.update(() => {
 		if (new_message) return { variant: 'success', ...new_message };
-		return { message: false, variant: 'success' };
+		return { message: false };
 	});

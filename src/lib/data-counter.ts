@@ -4,15 +4,15 @@ import {
 	Firmwares,
 	Users,
 	blogsModel,
-	categoriesModel,
-	laptopsModel,
+	Categories,
+	Products,
 	reviewsModel,
 	smartModel
 } from './models';
 
 await database.connect();
 export const countCategories = async () => {
-	const categories = await categoriesModel.find({}, { _id: 0, image: 0 }).lean();
+	const categories = await Categories.find({}, { _id: 0, image: 0 }).lean();
 	const analytics = await Analytics.findOne({}, { _id: 0 }).lean();
 	const limit = 15;
 	let topViewsFirm = await Firmwares.find({}, { views: 1, _id: 0 })
@@ -24,7 +24,7 @@ export const countCategories = async () => {
 		.sort({ views: -1 })
 		.limit(limit)
 		.lean();
-	let topViewsLap = await laptopsModel
+	let topViewsLap = await Products
 		.find({}, { views: 1, _id: 0 })
 		.sort({ views: -1 })
 		.limit(limit)

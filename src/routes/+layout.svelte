@@ -4,39 +4,46 @@
 	import Header from '$compo/header.svelte';
 	import { onMount } from 'svelte';
 	import {
-		themeStore,
-		toggleTheme,
 		messages,
 		updateMessages,
 		updateStaticData,
-		promptModal
+		promptModal,
+		static_data
 	} from '../lib/store';
 	import Footer from '$compo/footer.svelte';
 	import { CheckCircle, ExclamationTriangle, Icon, XMark } from 'svelte-hero-icons';
 	import { fade } from 'svelte/transition';
-	import type { PageData } from './$types';
 	import PromptModal from '$compo/prompt-modal.svelte';
-	import { staticBody } from '$lib/globals';
-	export let data: PageData;
-	$: data, updateStaticData({ settings: JSON.parse(data.settings) });
-	let pageLoad:boolean = false
-	onMount(() => {
-		toggleTheme(window.localStorage.getItem('theme'));
+	import { setCookies, staticBody } from '$lib/globals';
+	import axios from 'axios';
+	let pageLoad: boolean = false;
+	onMount(async () => {
 		pageLoad = true;
+		if ($static_data.settings.no_settings) {
+			await axios
+				.get('/api/get-items/', { params: { getSettings: 1 } })
+				.then((e) => {
+					updateStaticData({ settings: e.data });
+					setCookies('item-per-page', e.data['itemsPerPage']);
+				})
+				.catch((e) => {
+					console.error(e);
+				});
+		}
 	});
 	let closingModalInterval: any = undefined;
 	$: $messages, closeModal();
 	const closeModal = () => {
 		if (closingModalInterval) clearTimeout(closingModalInterval);
-		closingModalInterval = setTimeout(() => {
-			updateMessages();
-		}, 5000);
+		closingModalInterval = setTimeout(
+			updateMessages,
+			$messages.closing_time ? $messages.closing_time : 5000
+		);
 	};
-	$: $promptModal.visible, pageLoad && staticBody($promptModal.visible)
-		
+	$: $promptModal.visible, pageLoad && staticBody($promptModal.visible);
 </script>
 
-<div id="main-container" class:dark={$themeStore === 'dark'}>
+<div id="main-container">
 	<Header />
 	<main class="page-size">
 		{#if $promptModal.visible}
@@ -123,7 +130,7 @@
 		justify-content: space-between;
 		align-items: flex-start;
 		flex-direction: row;
-		width: 100%;
+		width: 1280px;
 		margin-top: 50px;
 		overflow: hidden;
 		& .left,
@@ -132,13 +139,34 @@
 			margin: 0 8px;
 		}
 		& .left {
+			background: var(--header-bg);
 			max-width: 25%;
 			position: fixed;
 			z-index: 5;
-			top: 0;
+			top: 78px;
+			border-radius: 6px;
 			bottom: 0;
 			display: flex;
 			align-items: center;
+			overflow: scroll;
+			height: 80%;
+			backdrop-filter: blur(18px);
+			box-shadow: var(--common-shadow);
+			border: 1px solid rgb(112 112 112 / 12%);
+			transition: background 300ms linear;
+			scrollbar-width: 2px;
+			scrollbar-color: #ffffff00;
+			scrollbar-arrow-color: #ffffff00;
+			scrollbar-base-color: #ffffff00;
+			scrollbar-gutter: #ffffff00;
+			&::-webkit-scrollbar {
+				width: 2px;
+				background: #ffffff00;
+			}
+			&::-webkit-scrollbar-thumb {
+				background-color: #767b785e;
+			}
+			transition: background 300ms linear;
 		}
 		& .right {
 			width: 92%;

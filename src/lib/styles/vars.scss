@@ -1,6 +1,7 @@
 :root{
     --bg-color: rgb(242, 253, 255);
     --secondary-bg: #eaeaea;
+    --header-bg: #f2fdff3d;
     --light-color-border: #ffffff30;
     --light-color-border-2: #dedede30;
     --priamry-color: #000;
@@ -27,6 +28,7 @@
 }
 
 .dark{
+    --header-bg: #03031266;
     --bg-color: #030312;
     --svg-light: #7990d5;
     --elements-hover: #d8d8ff;
@@ -50,5 +52,4 @@
     --button-border: #ffffff21;
     --color-success: 0, 255, 116;
     --color-alert: 255, 218, 0;
-    --color-danger: 255, 132, 0;
 }

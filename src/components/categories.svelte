@@ -17,8 +17,10 @@
 	let changesHappened = false;
 	document.querySelector('body')?.classList.add('modal-open');
 	const handleClose = async () => {
-		modalUpdate({ visible: false });
 		document.querySelector('body')?.classList.remove('modal-open');
+		const ref = $modal.no_refresh;
+		modalUpdate({ visible: false }); 
+		if(ref) return 1
 		if (changesHappened) location.href = `/categories`;
 	};
 	const handleForm = async () => {
@@ -47,7 +49,7 @@
 		delete df.old_image;
 		form.append('df', JSON.stringify(df));
 		axios
-			.post(`api/${$modal.action === 'edit' ? 'update-items' : 'set-items'}`, form, { headers: { requestFor: $modal.action === 'edit' ? 'updateCategories' : 'newCategory' } })
+			.post(`/api/${$modal.action === 'edit' ? 'update-items' : 'set-items'}`, form, { headers: { requestFor: $modal.action === 'edit' ? 'updateCategories' : 'newCategory' } })
 			.then((res) => {
 				changesHappened = true;
 				loading = false;

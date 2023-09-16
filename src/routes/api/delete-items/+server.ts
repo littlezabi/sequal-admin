@@ -6,10 +6,7 @@ import { handleDeleteCategory, handleDeleteItem, handleDeleteUser } from './hand
 await database.connect();
 export const POST = async ({ request, cookies }: any) => {
 	const body = await request.json();
-	let authenticated = await authenticateAdmin(
-		cookies.get('admin'),
-		request.headers.get('admin_key')
-	);
+	let authenticated = await authenticateAdmin(cookies.get('admin'));
 	if (!authenticated) {
 		cookies.delete('admin');
 		return new Response(

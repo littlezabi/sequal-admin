@@ -1,5 +1,6 @@
 import database from './database';
-import { Admin, Settings, Users, categoriesModel, smartModel } from '$lib/models';
+import { Admin, Products, Settings, Users, Categories, smartModel } from '$lib/models';
+import mongoose from 'mongoose';
 
 await database.connect();
 const projectSmart = {
@@ -11,7 +12,82 @@ const projectSmart = {
 	isActive: 1
 };
 export const getCategories = async (skip: number = 0, limit: number = 20) => {
-	return await categoriesModel.find().skip(skip).limit(limit).sort('-_id');
+	return await Categories.find().skip(skip).limit(limit).sort('-_id');
+};
+export const getProduct = async (_id: string) => {
+	try {
+		const product = await Products.findOne({ _id }).lean();
+		let category = {};
+		if (product)
+			category = await Categories.findOne(
+				{ _id: new mongoose.Types.ObjectId(product.category) },
+				{ type: 1 }
+			).lean();
+		return { product, category };
+	} catch (e) {
+		return false;
+	}
+};
+export const productList = async (
+	startIndex: number,
+	limit: number,
+	ctype: string,
+	category: any,
+	filter: any,
+	sort: string[]
+) => {
+	let match: any = false;
+	if (filter) match = { [filter[0]]: filter[1] };
+	if (category) {
+		try {
+			category = new mongoose.Types.ObjectId(category);
+		} catch (e) {
+			category = false;
+		}
+		match = match
+			? {$and: [{ category }, { ...match }]}
+			: {category};
+	}
+	if (ctype) {
+		match = match
+			? {$and: [{ 'cat.type': ctype }, { ...match }]}
+			: {'cat.type': ctype};
+	}
+	let pipleline: any = [
+		{ $skip: startIndex },
+		{ $limit: limit },
+		{ $sort: { [sort[0]]: sort[1] } },
+		{
+			$lookup: {
+				from: 'categories',
+				localField: 'category',
+				foreignField: '_id',
+				as: 'cat'
+			}
+		},
+		{ $match: match ? match : {} },
+		{ $unwind: '$cat' },
+		{
+			$project: {
+				...projectSmart,
+				'cat.category': 1,
+				'cat._id': 1,
+				'cat.type': 1
+			}
+		}
+	];
+	const list = await Products.aggregate(pipleline).exec();
+	return list.map((e: any, i: number) => {
+		let x = {
+			...e,
+			images: e.images.length > 1 ? [e.images[0]] : e.images,
+			category: e.cat.category,
+			category_id: e.cat._id,
+			index: ++i + startIndex
+		};
+		delete x.cat;
+		return x;
+	});
 };
 export const mobileList = async (startIndex: number, limit: number) => {
 	const list = await smartModel
@@ -30,7 +106,12 @@ export const mobileList = async (startIndex: number, limit: number) => {
 			{ $unwind: '$cat' },
 			{
 				$project: {
-					...projectSmart,
+					title: 1,
+					category: 1,
+					images: 1,
+					integrity: 1,
+					createdAt: 1,
+					isActive: 1,
 					'cat.category': 1,
 					'cat._id': 1
 				}
@@ -50,9 +131,9 @@ export const mobileList = async (startIndex: number, limit: number) => {
 	});
 };
 
-export const getSettings = async (): Promise<object[]> => {
-	return await Settings.findOne({}, { cookiesOptions: 0, oneTimeAdminLoginKey: 0, updatedAt: 0 });
-};
+export const getSettings = async (): Promise<object[]> =>
+	await Settings.findOne({}, { cookiesOptions: 0, oneTimeAdminLoginKey: 0, updatedAt: 0 });
+
 export const getUsers = async (
 	startIndex: number = 0,
 	limit: number = 20,

@@ -11,19 +11,23 @@
 		BellAlert,
 		Home
 	} from 'svelte-hero-icons';
-	import { adminSession, themeStore, toggleTheme } from '../lib/store';
+	import { adminSession } from '../lib/store';
 	import { PUBLIC_IMAGES_FETCH_URI } from '$env/static/public';
+	import { onMount } from 'svelte';
+	let theme: string | null = null;
 	const handleTheme = () => {
-		toggleTheme(null);
-		window.localStorage.setItem('theme', $themeStore === 'light' ? 'light' : 'dark');
+		theme = theme === 'dark' ? 'light' : 'dark';
+		window.localStorage.setItem('theme', theme);
+		document.body.classList.toggle('dark');
 	};
+	onMount(() => (theme = window.localStorage.getItem('theme')));
 </script>
 
 <header>
 	<nav class="page-size flex">
 		<ul class="flex logo">
 			<li>
-				<img src={$themeStore === 'dark' ? logoLight : logoDark} alt="sequal blue admin" />
+				<img src={theme === 'dark' ? logoLight : logoDark} alt="sequal blue admin" />
 			</li>
 		</ul>
 		<div class="flex ul-9ac83">
@@ -52,12 +56,17 @@
 					</button>
 				</li>
 				<li>
-					<button on:click={handleTheme}><Icon src={$themeStore === 'dark' ? Sun : Moon} /></button>
+					<button on:click={handleTheme}
+						><Icon
+							src={theme === 'dark' ? Sun : Moon}
+							class={theme === 'dark' ? 'sun' : 'moon'}
+						/></button
+					>
 				</li>
 			</ul>
 			<ul>
 				<li>
-					<a href={$adminSession ? "/logout" : "/login"}>
+					<a href={$adminSession ? '/logout' : '/login'}>
 						<section class="profile flex">
 							{#if $adminSession.avatar && $adminSession.avatar !== ''}
 								<div class="image flex">
@@ -89,7 +98,15 @@
 <style lang="scss">
 	header {
 		color: inherit;
-		margin-top: 9px;
+		position: fixed;
+		min-width: 888px;
+		padding: 7px 5px;
+		top: 0;
+		margin: auto;
+		backdrop-filter: blur(36px);
+		z-index: 1;
+		background: var(--header-bg);
+		width: 100%;
 		& .profile {
 			cursor: pointer;
 			& .image {
@@ -126,7 +143,7 @@
 		}
 		& .logo {
 			margin: 0;
-			width: 20%;
+			margin-left: 95px;
 			justify-content: center;
 			align-items: center;
 			display: flex;

@@ -1,20 +1,22 @@
 <script lang="ts">
 	 import { page } from "$app/stores";
-
 	import {
 		Icon,
 		ChartPie,
 		DevicePhoneMobile,
-		ComputerDesktop,
 		InformationCircle,
 		ClipboardDocument,
 		Photo,
 		CpuChip,
 		Users,
-		ChatBubbleBottomCenterText,
 		ChevronLeft,
 		Tag,
-		UserGroup
+		UserGroup,
+		QueueList,
+		Plus,
+
+		Bars3
+
 	} from 'svelte-hero-icons';
 	let sideBarClose = true;
 	let current_path = '/'
@@ -27,7 +29,7 @@
 		class:close={sideBarClose}
 		on:click={() => (sideBarClose = !sideBarClose)}
 	>
-		<Icon src={ChevronLeft} />
+		<Icon src={Bars3} />
 	</button>
 	<ul class="ul-top">
 		<li>
@@ -37,15 +39,21 @@
 			</a>
 		</li>
 		<li>
+			<a class={current_path === '/product-manager/new' ? 'flex active' : "flex"} href="/product-manager/new">
+				<Icon src={Plus} />
+				<span>Add New Products</span>
+			</a>
+		</li>
+		<li>
 			<a class={current_path === '/mobiles' ? 'flex active' : "flex"} href="/mobiles">
 				<Icon src={DevicePhoneMobile} />
 				<span>Mobile Phones</span>
 			</a>
 		</li>
 		<li>
-			<a class={current_path === '/computers' ? 'flex active' : "flex"} href="/computers">
-				<Icon src={ComputerDesktop} />
-				<span>Computer & Laptops</span>
+			<a class={current_path === '/products' ? 'flex active' : "flex"} href="/products">
+				<Icon src={QueueList} />
+				<span>Products</span>
 			</a>
 		</li>
 		<li>
@@ -95,20 +103,15 @@
 
 <style lang="scss">
 	.side-bar {
-		background: var(--side-bar);
 		color: var(--primary-color);
 		padding: 10px;
-		border-radius: 6px;
-		margin: 13px 1px;
+		height: 100%;
 		position: relative;
 		width: 270px;
 		transition: 300ms;
-		backdrop-filter: blur(18px);
-		box-shadow: var(--common-shadow);
-		border: 1px solid #0000000d;
 		& .side-bar-toggler {
-			width: 25px;
-			height: 25px;
+			width: 32px;
+			height: 32px;
 			border: 1px solid var(--light-color-border);
 			padding: 3px;
 			background: var(--bg-color);
@@ -116,16 +119,16 @@
 			text-align: center;
 			display: flex;
 			position: absolute;
-			right: -11px;
-			top: 8px;
+			right: 11px;
+			top: 14px;
 			transition: 800ms;
-			transform: matrix(1, 0, 0, -1, 0, 0);
+			transform: rotate(21deg);
 			&.close {
 				transform: matrix(-1, 0, 0, -1, 0, 0);
 			}
 		}
 		.ul-top {
-			margin: 28px 0;
+			margin: 46px 0 0 0;
 			cursor: pointer;
 			& li {
 				margin-top: 4px;

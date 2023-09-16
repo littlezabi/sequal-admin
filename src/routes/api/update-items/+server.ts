@@ -1,10 +1,7 @@
 import { authenticateAdmin } from '$lib/users';
-import { handleCategories, handleDeviceUpdate, handleUpdateUser, updateSettings } from './handlers';
+import { handleCategories, handleDeviceUpdate, handleProduct, handleUpdateUser, updateSettings } from './handlers';
 export const POST = async ({ request, cookies }: any) => {
-	let authenticated = await authenticateAdmin(
-		cookies.get('admin'),
-		request.headers.get('admin_key')
-	);
+	let authenticated = await authenticateAdmin(cookies.get('admin'));
 	if (!authenticated) {
 		cookies.delete('admin');
 		return new Response(
@@ -20,6 +17,8 @@ export const POST = async ({ request, cookies }: any) => {
 	else if (requestingFor === 'updateUser-1') return handleUpdateUser(await request.formData());
 	else if (requestingFor === 'updateCategories') return handleCategories(await request.formData());
 	else if (requestingFor === 'updateSettings') return updateSettings(await request.json());
+	else if (requestingFor === 'product-edit')  return handleProduct(await request.formData(), 'edit')
+	
 	else {
 		return new Response(
 			JSON.stringify({ message: 'API working but request data not found!', status: 0 }),

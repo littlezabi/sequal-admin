@@ -20,7 +20,7 @@
 		Trash
 	} from 'svelte-hero-icons';
 	import { modal, modalUpdate, promptModalUpdate, updateMessages } from '$lib/store';
-	import SmartDeviceView from '$compo/smart-device-view.svelte';
+	import SmartDeviceView from '$compo/product-view.svelte';
 	import axios from 'axios';
 	import Pagination from '$compo/pagination.svelte';
 	export let data: PageData;
@@ -51,7 +51,7 @@
 			});
 	};
 	const handleEdit = (item: any) => {
-		modalUpdate({ visible: true, ...item, action: 'edit' });
+		modalUpdate({ visible: true, ...item, action: 'edit', type: 'device' });
 	};
 	const handleDelete = (item: any) => {
 		promptModalUpdate({
@@ -102,7 +102,7 @@
 			<button
 				class="btn flex"
 				on:click={() =>
-					modalUpdate({ visible: true, action: 'new', title: 'Add new mobile device' })}
+					modalUpdate({ visible: true, action: 'new', title: 'Add new mobile device', type: 'device' })}
 			>
 				<span>NEW DEVICE</span>
 				<Icon src={Plus} />

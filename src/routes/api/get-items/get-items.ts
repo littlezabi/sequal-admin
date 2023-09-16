@@ -4,19 +4,28 @@ import {
 	Firmwares,
 	Users,
 	blogsModel,
-	categoriesModel,
+	Categories,
 	firmwareCategories,
-	laptopsModel,
+	Products,
 	reviewsModel,
-	smartModel
+	smartModel,
+	Settings
 } from '$lib/models';
 import { generateJWT } from '$lib/users';
 import bcrypt from 'bcryptjs';
 
+export const getCats = async (merge:boolean = false, type:boolean|string = '', only_fields={}, getTypes = false)=>{
+	let cats = await Categories.find(type ? {type} : {}, only_fields).lean();
+	let types = [{categoryTypes:[]}]
+	if(getTypes) types = await Settings.find({},{categoryTypes:1,_id:0}).lean();
+	if(merge) return cats
+	return new Response(JSON.stringify({ cats, types:types[0] }), { status: 200 });
+}
+
 export const dataCount = async () => {
 	const counter = {
 		mobiles: await smartModel.count(),
-		computers: await laptopsModel.count(),
+		products: await Products.count(),
 		blogs: await blogsModel.count(),
 		clients: await Users.count(),
 		admin: await Admin.count(),
@@ -24,33 +33,31 @@ export const dataCount = async () => {
 		announcments: await Announcments.count(),
 		firmwareCategories: await firmwareCategories.count(),
 		firmwares: await Firmwares.count(),
-		categories: await categoriesModel.count()
+		categories: await Categories.count()
 	};
 	return new Response(JSON.stringify({ counter }), { status: 200 });
 };
-export const getSmartDevices = async (_id: string | number, getCats: any) => {
-	let cats = [];
-	let item: any = undefined;
-	if (_id != 0)
-		item = await smartModel.findOne(
-			{ _id },
-			{
-				_id: 0,
-				title: 0,
-				image: 0,
-				integrity: 0,
-				createdAt: 0,
-				isActive: 0,
-				updatedAt: 0,
-				original: 0
-			}
-		);
-	if (getCats != 0)
-		cats = await categoriesModel
-			.find({ type: getCats }, { image: 0, items: 0, type: 0, updatedAt: 0, createdAt: 0 })
-			.lean();
-	return new Response(JSON.stringify({ item, cats }), { status: 200 });
-};
+// export const getSmartDevices = async (_id: string | number, getCats: any) => {
+// 	let cats = [];
+// 	let item: any = undefined;
+// 	if (_id != 0)
+// 		item = await smartModel.findOne(
+// 			{ _id },
+// 			{
+// 				_id: 0,
+// 				title: 0,
+// 				image: 0,
+// 				integrity: 0,
+// 				createdAt: 0,
+// 				isActive: 0,
+// 				updatedAt: 0,
+// 				original: 0
+// 			}
+// 		);
+// 	if (getCats != 0)
+// 		cats = await getCats(true, getCats, { category: 1, _id: 1})
+// 	return new Response(JSON.stringify({ item, cats }), { status: 200 });
+// };
 export const checkUsername = async (username: string) => {
 	return new Response(
 		JSON.stringify({

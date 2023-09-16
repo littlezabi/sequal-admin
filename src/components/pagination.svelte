@@ -2,30 +2,41 @@
 	import { static_data, updateStaticData } from '$lib/store';
 	import { onMount } from 'svelte';
 	import Loading from './loading.svelte';
-	import { ChevronDoubleLeft, ChevronDoubleRight, ChevronLeft, ChevronRight, Icon } from 'svelte-hero-icons';
+	import {
+		ChevronDoubleLeft,
+		ChevronDoubleRight,
+		ChevronLeft,
+		ChevronRight,
+		Icon
+	} from 'svelte-hero-icons';
 	const paginateButtonShow = $static_data.settings.paginateButtonShow ?? 6;
 	const itemPerPage = $static_data.settings.itemsPerPage ?? 20;
 	export let pageNo = 0;
 	export let counter_model: string;
 	export let renderFor = '';
+	let loaded: boolean = false;
+	const generatePagi = async () => {
+		if (loaded) {
+			let __count__ = $static_data.counter;
+			if (!__count__) {
+				const res = await fetch(`/api/get-items?count-items=1`)
+					.then((e) => e.json())
+					.catch((e) => e);
+				updateStaticData({ counter: res.counter });
+				__count__ = res.counter;
+				loading = false;
+				calculateStartAndEndPage(res.counter[counter_model]);
+			} else calculateStartAndEndPage(__count__[counter_model]);
+		}
+	};
 	let loading = true;
 	let totalPages = 0;
 	let startPage = 0;
 	let endPage = 0;
-
+	$: pageNo, generatePagi();
 	onMount(async () => {
-		let __count__ = $static_data.counter;
-		if (!__count__) {
-			const res = await fetch(`/api/get-items?count-items=1`)
-				.then((e) => e.json())
-				.catch((e) => e);
-			updateStaticData(res.counter);
-			__count__ = res.counter;
-			loading = false;
-			calculateStartAndEndPage(res.counter[counter_model]);
-		} else {
-			calculateStartAndEndPage(__count__[counter_model]);
-		}
+		loaded = true;
+		await generatePagi();
 	});
 	function range(start: number, end: number) {
 		return Array.from({ length: end - start + 1 }, (_, i) => start + i);
@@ -46,6 +57,7 @@
 		}
 	}
 </script>
+
 <div class="pagination">
 	{#if loading}
 		<Loading width={100} />
@@ -66,7 +78,6 @@
 				href={`${renderFor}?p=${pageNo - 1}`}
 				class={pageNo === 0 ? 'disabled' : ''}
 				title="Go to previous page"
-			
 			>
 				<Icon style="width: 20px;color: #ffffff87;" src={ChevronLeft} />
 			</a>
@@ -75,7 +86,6 @@
 					href={`${renderFor}?p=${page + 1}`}
 					class={page === pageNo ? 'active' : ''}
 					title={`Go to page ${page + 1}`}
-				
 				>
 					{page + 1}
 				</a>
@@ -84,7 +94,6 @@
 				href={`${renderFor}?p=${pageNo + 2}`}
 				class={pageNo === totalPages - 1 ? 'disabled' : ''}
 				title="Go to next page"
-			
 			>
 				<Icon style="width: 20px;color: #ffffff87;" src={ChevronRight} />
 			</a>

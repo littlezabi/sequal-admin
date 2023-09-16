@@ -1,7 +1,8 @@
 import database from '$lib/database';
 import countries from '$lib/assets/countries.json';
 import { authenticateAdmin } from '$lib/users';
-import { adminLogin, checkUsername, dataCount, emptyRequest, getSmartDevices } from './get-items';
+import { adminLogin, checkUsername, dataCount, emptyRequest, getCats } from './get-items';
+import { getSettings } from '$lib/item-list';
 
 await database.connect();
 export const POST = async ({ request, cookies }: any) => {
@@ -11,11 +12,7 @@ export const POST = async ({ request, cookies }: any) => {
 };
 export const GET = async ({ url, cookies, request }: any) => {
 	if (url.searchParams.get('count-items')) return dataCount();
-
-	let authenticated = await authenticateAdmin(
-		cookies.get('admin'),
-		request.headers.get('admin_key')
-	);
+	let authenticated = await authenticateAdmin(cookies.get('admin'));
 	if (!authenticated) {
 		cookies.delete('admin');
 		return new Response(
@@ -28,5 +25,6 @@ export const GET = async ({ url, cookies, request }: any) => {
 	}
 	if (url.searchParams.get('getCountries')) return new Response(JSON.stringify(countries), { status: 200 });
 	if (url.searchParams.get('checkUsername')) return checkUsername(url.searchParams.get('username'));
-	if (url.searchParams.get('smart_device')) return getSmartDevices(url.searchParams.get('_id'), url.searchParams.get('getCats'));
+	if (url.searchParams.get('getCats')) return getCats(false, false, {category: 1, type: 1, _id: 1}, url.searchParams.get('getTypes'));
+	if (url.searchParams.get('getSettings')) return new Response(JSON.stringify(await getSettings()), { status: 200 });
 };

@@ -154,17 +154,17 @@ const reviewsSchema = new mongoose.Schema(
 		strict: false
 	}
 );
-const laptopsSchema = new mongoose.Schema(
+const productsSchema = new mongoose.Schema(
 	{
-		name: { type: String, required: true },
-		image: { type: Object, required: true },
-		category: {type: mongoose.Schema.Types.ObjectId, ref: 'categories'},
-		slug: { type: Object, required: true },
-		original: { type: String, required: false },
-		views: { type: Number, default: 0, required: false },
-		hits: { type: Number, require: false, default: 1 },
-		fans: { type: Number, require: false, default: 1 },
-		popularity: { type: Number, require: false, default: 1 }
+		title: { type: String, required: true },
+		image: { type: Object, required: false },
+		category: {type: mongoose.Schema.Types.ObjectId, ref: 'categories', required: false},
+		headers: { type: Array, required: false },
+		specs_list: {type: Object, required: false},
+		views: { type: Number, default: 0 },
+		loves: { type: Number, default: 0 },
+		rating: {type: Number, default: 5.0},
+		slug: { type: Object, required: false },
 	},
 	{
 		timestamps: true,
@@ -231,10 +231,10 @@ const blogsSchema = new mongoose.Schema(
 	}
 );
 export const blogsModel: any = mongoose.models.blogs || mongoose.model('blogs', blogsSchema);
-export const categoriesModel: any =
+export const Categories: any =
 	mongoose.models.categories || mongoose.model('categories', categoriesSchema);
-export const laptopsModel: any =
-	mongoose.models.laptops || mongoose.model('laptops', laptopsSchema);
+export const Products: any =
+	mongoose.models.products || mongoose.model('products', productsSchema);
 export const smartModel: any =
 	mongoose.models.mobile_devices || mongoose.model('phones', smartSchema);
 export const reviewsModel: any =

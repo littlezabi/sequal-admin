@@ -1,22 +1,18 @@
 <script lang="ts">
 	import axios from 'axios';
+	import { Icon, Minus, Plus, XMark } from 'svelte-hero-icons';
 	import {
-		ArrowUturnLeft,
-		ChevronLeft,
-		ChevronRight,
-		Icon,
-		Minus,
-		Photo,
-		Plus,
-		Trash,
-		XMark
-	} from 'svelte-hero-icons';
-	import { modal, modalUpdate, static_data, updateMessages, updateStaticData } from '$lib/store';
-	import { PUBLIC_IMAGES_FETCH_URI, PUBLIC_PHONE_IMAGE_FOLDER } from '$env/static/public';
+		modal,
+		modalUpdate,
+		promptModalUpdate,
+		static_data,
+		updateMessages,
+		updateStaticData
+	} from '$lib/store';
 	import { life, numberFormat } from '$lib/globals';
 	import Loading from './loading.svelte';
-	import { fade } from 'svelte/transition';
 	import CustomNumberInput from './custom-number-input.svelte';
+	import HandleImages from './handle-images.svelte';
 	let message: any = false;
 	$: message, updateMessages(message);
 	let item = $modal;
@@ -24,7 +20,6 @@
 	let views: number = 0;
 	let rating: number = 0;
 	let headers: string = '';
-	// let loading = $modal.action === 'new' ? false : true;
 	let loading = false;
 	let cats: [] | any = $static_data.categories;
 	$: $modal, (item = $modal), getItem($modal.action === 'new' ? 0 : $modal._id);
@@ -108,17 +103,19 @@
 	};
 	const headersToString = (sep = '\n') => {
 		headers = '';
-		dataFrame.data.headers.map((e: string, i: number) => {
-			if (e !== '') {
-				if (i + 1 >= dataFrame.data.headers.length) headers += e;
-				else {
-					if (i + 1 >= $static_data.settings.deviceViewHeaderTextLength) headers += e;
-					else headers += e + sep;
+		if (dataFrame.data.headers)
+			dataFrame.data.headers.map((e: string, i: number) => {
+				if (e !== '') {
+					if (i + 1 >= dataFrame.data.headers.length) headers += e;
+					else {
+						if (i + 1 >= $static_data.settings.deviceViewHeaderTextLength) headers += e;
+						else headers += e + sep;
+					}
 				}
-			}
-		});
+			});
 	};
 	const getItem = async (_id: string | number = 0) => {
+		console.log($modal);
 		if (_id == 0 && cats.length) return 0;
 		const params: any = { smart_device: 1, _id };
 		if (!cats.length) params['getCats'] = 'phones';
@@ -156,16 +153,7 @@
 				console.error(e);
 			});
 	};
-	const handleImage = (file: any) => {
-		[...file.target.files].forEach((image) => {
-			if (dataFrame.images) dataFrame.images = [...dataFrame.images, image];
-			else dataFrame.images = [image];
-			let reader = new FileReader();
-			reader.onload = (e: any) => (filesList = [...filesList, e.target.result]);
-			reader.readAsDataURL(image);
-		});
-	};
-	let newSpecItem: any = { visible: false, key: '', value: '' };
+	let newSpecItem: any = { key: '', value: '' };
 	const addNewElement = (id: string) => {
 		const element = document.getElementById(id);
 		let lastElement: any = element?.querySelectorAll('div');
@@ -173,46 +161,64 @@
 		let lastInputIndex = lastElement.querySelector('input')['name'];
 		lastInputIndex = Number(lastInputIndex.match(/\d+(?=_x_)/g)[0]);
 		newSpecItem = {
-			visible: true,
 			specs: id.split('-super')[0].replace('---', ' '),
 			lastInputIndex,
 			specs_list: element
 		};
+		promptModalUpdate({
+			visible: true,
+			title: `Add Specs of ${newSpecItem.specs.toUpperCase()}`,
+			description:
+				'In our device dataset, all specifications have a key and value. When adding new specifications, we need to provide both the key and value. The first input is for the key, and the second input is for the value.',
+			form: {
+				inputs: [
+					{
+						label: `NEW ${newSpecItem.specs.toUpperCase()} SPEC TITLE`,
+						type: 'text',
+						placeholder: 'E.g. Item body weight',
+						name: 'new-key',
+						value: newSpecItem.key ?? '',
+						callback: __cxd,
+						required: true
+					},
+					{
+						label: `NEW ${newSpecItem.specs.toUpperCase()} SPEC VALUE`,
+						type: 'text',
+						placeholder: 'E.g. 2.05 KG',
+						name: 'spec-value',
+						value: newSpecItem.value ?? '',
+						callback: __cxd,
+						required: true
+					}
+				],
+				buttons: [
+					{
+						type: 'button',
+						title: 'ADD SPECS',
+						callback: addSpecItemInDF
+					},
+					{
+						type: 'button',
+						title: 'Close',
+						callback: () => promptModalUpdate({ visible: false })
+					}
+				]
+			}
+		});
 	};
 	const addSpecItemInDF = () => {
 		const key = newSpecItem.key;
 		let regex = /^[a-zA-Z0-9\s]+$/;
-		if (!regex.test(key)) {
-			updateMessages({
-				message: 'You can not add special characters in your key/title.',
-				variant: 'danger'
-			});
-			return 0;
-		}
-		if (key === undefined || key === '') {
-			updateMessages({
-				message: 'Enter a key of your new specification!',
-				variant: 'danger'
-			});
-			return 0;
-		}
-		if (newSpecItem.value === undefined || newSpecItem.value === '') {
-			updateMessages({
-				message: 'Enter a value of your new specification!',
-				variant: 'danger'
-			});
-			return 0;
-		}
+		let m: boolean | string = false;
+		if (!regex.test(key)) m = 'You can not add special characters in your key/title.';
+		if (key === undefined || key === '') m = 'Enter a key of your new specification!';
+		if (newSpecItem.value === undefined || newSpecItem.value === '')
+			m = 'Enter a value of your new specification!';
 		let exist = dataFrame.data[newSpecItem.specs].filter(
 			(item: any) => Object.keys(item)[0] === key
 		);
-		if (exist.length > 0) {
-			updateMessages({
-				message: `Your entered key (${key}) is already exist on ${newSpecItem.specs}.`,
-				variant: 'danger'
-			});
-			return 0;
-		}
+		if (exist.length > 0) m = `Your entered key (${key}) is already exist on ${newSpecItem.specs}.`;
+		if (m) return updateMessages({ message: m, variant: 'danger' });
 		const name = `${newSpecItem.specs}___${++newSpecItem.lastInputIndex}_x_${key}`;
 		dataFrame.data[newSpecItem.specs].push({ [key]: newSpecItem.value });
 		updateMessages({
@@ -220,19 +226,11 @@
 			variant: 'success'
 		});
 		let tempElement = document.createElement('div');
-		tempElement.innerHTML = `
-			<div class="a03x s-96QAaaAScBii">
-				<label for="s${key.replaceAll(' ', '')}-spec" class="s-96QAaaAScBii">${key}</label>
-				<input
-					type="text"
-					name="${name}"
-					value="${newSpecItem.value}"
-					id="s${key.replaceAll(' ', '')}-spec"
-					placeholder="Enter ${key} details"
-					class="s-96QAaaAScBii"
-				/>
-			</div>
-		`;
+		tempElement.innerHTML = `<div class="a03x s-96QAaaAScBii"><label 
+			for="s${key.replaceAll(' ', '')}-spec" 
+			class="s-96QAaaAScBii">${key}</label><input type="text" name="${name}" value="${newSpecItem.value}"
+			id="s${key.replaceAll(' ', '')}-spec"
+		 	placeholder="Enter ${key} details" class="s-96QAaaAScBii"/></div>`;
 		const childNodes = tempElement.childNodes;
 		for (let i = 0; i < childNodes.length; i++)
 			newSpecItem.specs_list.appendChild(childNodes[i].cloneNode(true));
@@ -384,46 +382,18 @@
 		}
 	};
 	const __cxd = (e: Event): void => {
-		if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
-			if (e.target.name === 'new-key') newSpecItem = { ...newSpecItem, key: e.target.value };
-			if (e.target.name === 'spec-value') newSpecItem = { ...newSpecItem, value: e.target.value };
-		}
-	};
-	const __ixq = (): void => {
-		const element = document.querySelector('#phone-image') as HTMLElement;
-		element.click();
-	};
-	const __npc = (e: Event): void => {
 		if (e.target instanceof HTMLInputElement) {
-			if (e.target.name === 'is-active') dataFrame.data.isActive = e.target?.checked;
-			else dataFrame.data.is_new = e.target?.checked;
+			if (e.target.name === 'new-key') newSpecItem = { ...newSpecItem, key: e.target.value.trim() };
+			if (e.target.name === 'spec-value')
+				newSpecItem = { ...newSpecItem, value: e.target.value.trim() };
 		}
 	};
-	const shiftImage = (shift: string, cur_index: number): void => {
-		let position = 1;
-		position = shift === 'left' ? cur_index - 1 : cur_index + 1;
-		const e = filesList.splice(cur_index, 1);
-		filesList.splice(position, 0, e[0]);
-		const frameImage = dataFrame.images.splice(cur_index, 1);
-		dataFrame.images.splice(position, 0, frameImage[0]);
-		filesList = filesList;
-	};
-	const removeImage = (index: number): void => {
-		filesList.splice(index, 1);
-		filesList = filesList;
-		if (typeof dataFrame.images[index] === 'string') {
-			if (dataFrame.info.removeImages) dataFrame.info.removeImages.push(dataFrame.images[index]);
-			else dataFrame.info.removeImages = [dataFrame.images[index]];
+	const __npc = (e: any, name: string, checked: boolean): void => {
+		if (e.target instanceof HTMLButtonElement) {
+			e.target.classList.toggle('active');
+			if (name === 'is-active') dataFrame.data.isActive = checked;
+			else dataFrame.data.is_new = checked;
 		}
-		dataFrame.images.splice(index, 1);
-		dataFrame.images = dataFrame.images;
-		dataFrame.info.removeImages = dataFrame.info.removeImages;
-	};
-	const removeFromTrash = (index: number): void => {
-		filesList = [...filesList, dataFrame.info.removeImages[index]];
-		dataFrame.images.push(dataFrame.info.removeImages[index]);
-		dataFrame.info.removeImages.splice(index, 1);
-		dataFrame.info.removeImages = dataFrame.info.removeImages;
 	};
 	const removeFromSpecs = (specs: string, spec: string = ''): void => {
 		if (spec === '') {
@@ -448,57 +418,10 @@
 
 <div class="modal">
 	<button on:click={handleClose} class="close-btn"><Icon src={XMark} /></button>
-	{#if newSpecItem.visible}
-		<div class="spec-input-modal" transition:fade>
-			<div class="inner-spec-modal">
-				<div class="form">
-					<h2>Add Specs of {item.title} {newSpecItem.specs.toUpperCase()}</h2>
-					<p>
-						In our device dataset, all specifications have a key and value. When adding new
-						specifications, we need to provide both the key and value. The first input is for the
-						key, and the second input is for the value.
-					</p>
-					<form>
-						<div class="flex-yxz">
-							<div class="a03x full-w">
-								<label for="new-key">NEW {newSpecItem.specs.toUpperCase()} SPEC TITLE</label>
-								<input
-									type="text"
-									name="new-key"
-									id="new-key"
-									value={newSpecItem.key ?? ''}
-									placeholder="E.g. Screen width"
-									on:change={__cxd}
-									required
-								/>
-							</div>
-							<div class="a03x full-w">
-								<label for="spec-value">NEW {newSpecItem.specs.toUpperCase()} SPEC VALUE</label>
-								<input
-									type="text"
-									name="spec-value"
-									id="spec-value"
-									value={newSpecItem.value ?? ''}
-									placeholder="E.g 720 pixels"
-									on:change={__cxd}
-								/>
-							</div>
-						</div>
-						<div class="flex-yxz">
-							<button type="button" on:click={addSpecItemInDF}>ADD SPECS</button>
-							<button type="button" on:click={() => (newSpecItem = { visible: false })}
-								>CANCIL</button
-							>
-						</div>
-					</form>
-				</div>
-			</div>
-		</div>
-	{/if}
 	<div class="inner-modal">
 		<div class="form" id="dataframe-form">
 			<h2>{item.title}</h2>
-			{#if $modal.action === 'edit'}
+			{#if $modal.action === 'edit' && item.type !== 'product'}
 				{#if loading}
 					<span>
 						<Loading loading_lines={2} />
@@ -511,25 +434,22 @@
 				{/if}
 			{/if}
 			<p>
-				You can add new, update or delete the device. take any action carefully there is no change
-				to undo your actions.
+				You can add new, update or delete the {item.type}. take any action carefully there is no
+				change to undo your actions.
 			</p>
 			<form on:submit={handleForm} id="phone-form">
-				<div
-					class="flex"
-					style="justify-content:space-between;align-items: flex-start;flex-direction: column;"
-				>
+				<div class="flex xkez">
 					{#if typeof message === 'object' && message !== null}
 						<span
 							class="message {message.variant ? message.variant : 'success'}"
 							style="margin: 10px 0;">{message.message}</span
 						>
 					{/if}
-					<input style="margin:0" type="submit" value="SAVE PHONE" />
+					<input style="margin:0" type="submit" value="SAVE" />
 				</div>
 				<div class="flex-yxz">
 					<div class="a03x">
-						<label for="title">DEVICE TITLE HERE</label>
+						<label for="title">{item.type} TITLE HERE</label>
 						<input
 							type="text"
 							name="_y_title"
@@ -541,10 +461,10 @@
 						/>
 					</div>
 					<div class="a03x">
-						<label for="category">DEVICE CATEGORY</label>
+						<label for="category">{item.type} CATEGORY</label>
 						<select name="_y_category" id="category">
 							{#if $modal.action === 'new'}
-								<option selected disabled value="un-selected">Select Device Category</option>
+								<option selected disabled value="un-selected">Select Category</option>
 							{/if}
 							{#if Array.isArray(cats)}
 								{#each cats as cat}
@@ -560,7 +480,7 @@
 				</div>
 				<div class="flex-yxz">
 					<div class="a03x full-w">
-						<label for="description">PHONE DESCRIPTION</label>
+						<label for="description">{item.type} DESCRIPTION</label>
 						{#if loading}
 							<div style="width: 256px;">
 								<Loading />
@@ -569,7 +489,7 @@
 							<textarea
 								name="description"
 								id="description"
-								placeholder="Type something about phone"
+								placeholder="Type something about {item.type}"
 								required>{$modal.action === 'edit' ? item.description : ''}</textarea
 							>
 						{/if}
@@ -577,12 +497,13 @@
 				</div>
 				<div class="flex-yxz">
 					<div class="a03x full-w">
-						<label for="headers"
-							>PHONE HEADERS <small
-								>(seperate with Enter (\n). You can add maximum {$static_data.settings
-									.deviceViewHeaderTextLength} headers)</small
-							></label
-						>
+						<label for="headers">
+							{$modal.type} HEADERS
+							<small>
+								(seperate with Enter (\n). You can add maximum {$static_data.settings
+									.deviceViewHeaderTextLength} headers. use shortest lines)
+							</small>
+						</label>
 						{#if loading}
 							<div style="width: 256px;">
 								<Loading />
@@ -592,94 +513,13 @@
 								name="headers"
 								id="headers"
 								on:change={handleHeadersArea}
-								placeholder="Type something about phone"
+								placeholder="Enter some short lines about product"
 								required>{headers}</textarea
 							>
 						{/if}
 					</div>
 				</div>
-
-				<div class="flex-yxz">
-					<div class="a03x full-w image-input">
-						<label for="phone-image">PHONE IMAGE</label>
-						{#if loading}
-							<Loading />
-						{:else}
-							<div class="add-image" on:mousedown={__ixq}>
-								<Icon src={Photo} />
-								<span>Click to add image's</span>
-							</div>
-						{/if}
-						<input
-							type="file"
-							name="phone-image"
-							id="phone-image"
-							accept="image/*"
-							multiple={true}
-							on:change={handleImage}
-						/>
-					</div>
-				</div>
-				<span style="font-size: 11px;"
-					>Sort image carefully first images is device display images</span
-				>
-				<div class="flex-yxz image-list">
-					{#each filesList as file, index}
-						<div class="image-view">
-							<button
-								title="Remove Image"
-								on:click={() => removeImage(index)}
-								type="button"
-								class="cls-btn"><Icon src={Trash} /></button
-							>
-							<img
-								src={file.includes('data:') || file.includes('http')
-									? file
-									: PUBLIC_IMAGES_FETCH_URI + PUBLIC_PHONE_IMAGE_FOLDER + file}
-								alt={file}
-							/>
-							<div class="image-shift">
-								{#if index !== 0}
-									<button
-										on:click={() => shiftImage('left', index)}
-										title="shift to Left"
-										type="button"><Icon src={ChevronLeft} /></button
-									>
-								{/if}
-								{#if index < filesList.length - 1}
-									<button
-										on:click={() => shiftImage('right', index)}
-										title="shift to Right"
-										type="button"><Icon src={ChevronRight} /></button
-									>
-								{/if}
-							</div>
-						</div>
-					{/each}
-				</div>
-				{#if dataFrame.info.removeImages && dataFrame.info.removeImages.length}
-					<span style="font-size: 12px;color:orangered;"
-						>Image Trash (Trash images will be permanently deleted after saving)</span
-					>
-					<div class="flex-yxz image-list" style="background:#b4222233">
-						{#each dataFrame.info.removeImages as file, index}
-							<div class="image-view">
-								<button
-									title="Add back to the image list"
-									on:click={() => removeFromTrash(index)}
-									type="button"
-									class="cls-btn"><Icon src={ArrowUturnLeft} /></button
-								>
-								<img
-									src={file.includes('http')
-										? file
-										: PUBLIC_IMAGES_FETCH_URI + PUBLIC_PHONE_IMAGE_FOLDER + file}
-									alt={file}
-								/>
-							</div>
-						{/each}
-					</div>
-				{/if}
+				<HandleImages {dataFrame} {filesList} {loading} />
 				{#each item_specs as specs}
 					{#if dataFrame.data[specs].length}
 						<div class="add-spec-item">
@@ -791,7 +631,6 @@
 						<CustomNumberInput bind:output={loves} value={loves} title={'Loves'} />
 					</div>
 				</div>
-
 				<div class="flex-yxz">
 					<h3 class="spec-item-title">KEYWORDS</h3>
 					<div class="keywords-list">
@@ -819,30 +658,26 @@
 						/>
 					</div>
 				</div>
-
-				<div class="flex-yxz">
-					<div class="a03x a03x-1">
-						<input
-							type="checkbox"
-							on:change={__npc}
-							name="is-active"
-							id="is-active"
-							checked={item.isActive}
+				<div class="jkcw">
+					<div class="flex">
+						<button
+							type="button"
+							class="btn-stylish {dataFrame.data.isActive ? 'active' : ''}"
+							data-name="is-new"
+							on:click={(e) => __npc(e, 'is-active', !dataFrame.data.isActive)}
 						/>
-						<label for="is-active">VISIBLE <small>(toggle visibility of the device)</small></label>
+						<span>VISIBLE <small>(toggle visibility of the device)</small></span>
 					</div>
-					<div class="a03x a03x-1">
-						<input
-							type="checkbox"
-							name="is-new"
-							id="is-new"
-							on:change={__npc}
-							checked={item.is_new}
+					<div class="flex">
+						<button
+							type="button"
+							class="btn-stylish {dataFrame.data.is_new ? 'active' : ''}"
+							data-name="is-new"
+							on:click={(e) => __npc(e, 'is-new', !dataFrame.data.is_new)}
 						/>
-						<label for="is-new">ITEM IS NEW <small>(toggle to item as new)</small></label>
+						<span>ITEM IS NEW <small>(toggle to item as new)</small></span>
 					</div>
 				</div>
-
 				<div class="flex-yxz">
 					<div class="a03x full-w">
 						<label for="slug">SLUG</label>

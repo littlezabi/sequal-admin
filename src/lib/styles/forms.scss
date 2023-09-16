@@ -26,7 +26,12 @@
 				width: 46%;
 				margin-top: 15px;
 				margin-right: 20px;
-
+				& label{
+					text-transform: uppercase;
+					& small{
+						text-transform: none !important;
+					}
+				}
 				&.full-w {
 					width: 100%;
 				}
@@ -52,6 +57,9 @@
 						background: var(--bg-color);
 						font-size: 14px;
 						text-transform: uppercase;
+					}
+					& optgroup{
+						background: var(--bg-color);
 					}
 				}
 				& input[type='checkbox'] {
