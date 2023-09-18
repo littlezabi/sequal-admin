@@ -85,6 +85,7 @@
 	};
 	const postDataframe = async (asDraft: boolean = false) => {
 		dataFrame.data.asDraft = asDraft
+		console.log(dataFrame)
 		const form = new FormData();
 		if (dataFrame.images)
 			dataFrame.images.forEach((e: File, i: number) => form.append(`image_${i}`, e));
@@ -328,7 +329,7 @@
 		let lastInputIndex = lastElement.querySelector('input')['name'];
 		lastInputIndex = Number(lastInputIndex.match(/\d+(?=_x_)/g)[0]);
 		newSpecItem = {
-			specs: id.split('-super')[0].replace('---', ' '),
+			specs: id.split('-super')[0].replaceAll('---', ' '),
 			lastInputIndex,
 			specs_list: element
 		};

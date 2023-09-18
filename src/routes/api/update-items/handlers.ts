@@ -86,7 +86,6 @@ export const handleProduct = async (formData: any, action = 'edit') => {
 				{ _id: info._id },
 				{
 					$set: { ...dataframe},
-					$unset: dataframe.asDraft ? {} : { asDraft: 1 }
 				}
 			);
 			if (dataframe.asDraft) return getResponse(undefined, 200, 1, { message: `Draft Saved!`, product:dataframe});

@@ -28,7 +28,44 @@
 	import CategoryInputView from '$compo/category-input-view.svelte';
 	export let data: PageData;
 	let items: any = data.list;
-	$: data.pageNo, (items = data.list);
+	let filtered_total_items = 0;
+	$: data.pageNo, (items = data.list), (filtered_total_items = data.total);
+
+	let selectedItems: string[] = [];
+	const handleListDelete = () => {
+		if (selectedItems.length)
+			promptModalUpdate({
+				visible: true,
+				title: `CONFIRM ${selectedItems.length > 1 ? "MULTIPLE DELETE'S" : 'DELETE'} `,
+				description: `Are you sure you want to delete the item'${
+					selectedItems.length > 1 ? 's' : ''
+				}'? Please proceed with caution, as this action is irreversible and cannot be undone.`,
+				confirm: [
+					{
+						title: 'DELETE',
+						class: 'bg-danger',
+						callback: async () => {
+							await axios
+								.post(
+									'/api/delete-items',
+									{ listIDs: selectedItems, model: 'product' },
+									{ headers: { requestFor: 'deleteItemsList' } }
+								)
+								.then((e) => {
+									updateMessages({
+										message: e.data.message,
+										variant: e.data.success ? 'success' : 'alert'
+									});
+									if (e.data.success) goto(`/products/${$page.url.search}`);
+									promptModalUpdate({ visible: false });
+								})
+								.catch((e) => console.error(e));
+						},
+						type: 'button'
+					}
+				]
+			});
+	};
 	const handleDelete = (item: any) => {
 		promptModalUpdate({
 			visible: true,
@@ -56,11 +93,6 @@
 							.catch((e) => console.error(e));
 					},
 					type: 'button'
-				},
-				{
-					title: 'CANCIL',
-					callback: () => promptModalUpdate({ visible: false }),
-					type: 'button'
 				}
 			]
 		});
@@ -76,10 +108,9 @@
 			prev_cat['_id'] = $page.url.searchParams.get('category');
 	});
 	const handleFiltersAndTypes = (e: any, type: string) => {
-		let value = typeof e === 'string' ? e : e.target.value
-		query[type] = e;
-		if(type === 'category-type' && e === 'all') prev_cat['_id'] = 'all'
-		console.log(query);
+		let value = typeof e === 'string' ? e : e.target.value;
+		query[type] = value;
+		if (type === 'category-type' && value === 'all') prev_cat['_id'] = 'all';
 	};
 	const handleFilteredSearch = () => {
 		let final = '';
@@ -88,6 +119,60 @@
 		});
 		if (final.at(-1) === '&') final = final.substring(0, final.length - 1);
 		goto(`products/?${final}`);
+	};
+	onMount(() => {
+		let selectors: any = document.querySelectorAll('.selector-list');
+		let selectAllCheck: any = document.getElementById('select-all');
+		selectors.forEach((selector: any) => {
+			selector.addEventListener('change', (e: any) => {
+				let id = e.target.getAttribute('data-id');
+				if (e.target.checked) {
+					selectedItems = [...selectedItems, id];
+				} else {
+					selectedItems = selectedItems.filter((e) => e !== id);
+				}
+				if (selectedItems.length > 0) selectAllCheck.indeterminate = true;
+				else selectAllCheck.indeterminate = false;
+			});
+			// selectedItems = selectedItems
+		});
+		selectAllCheck.addEventListener('change', (e: any) => {
+			selectedItems = [];
+			selectors.forEach((selector: any) => {
+				let id = selector.getAttribute('data-id');
+				if (e.target.checked) {
+					selectedItems.push(id);
+					selector.checked = true;
+				} else {
+					selector.checked = false;
+					selectedItems = [];
+				}
+			});
+		});
+	});
+	const sort = (by: any): any => {
+		let order = by.target.value.split('_').at(-1);
+		by = by.target.value.split('_')[0];
+		let comp_a = order === 'asc' ? 1 : -1;
+		let comp_b = order === 'desc' ? 1 : -1;
+		if (by === 'isActive') {
+			items = data.list.sort((a: any, b: any) => {
+				if (!a.isActive && b.isActive) return comp_a;
+				if (a.isActive && !b.isActive) return comp_b;
+				return 0;
+			});
+		} else if (by === 'createdAt')
+			items = data.list.sort((a: any, b: any) => {
+				const x: any = new Date(a.createdAt);
+				const y: any = new Date(b.createdAt);
+				return x - y;
+			});
+		else
+			items = data.list.sort((a: any, b: any) => {
+				if (a[by] > b[by]) return comp_a;
+				if (a[by] < b[by]) return comp_b;
+				else return 0;
+			});
 	};
 </script>
 
@@ -132,7 +217,7 @@
 						</select>
 					</span>
 				</div>
-				<div class="a03x" style="width: 159px;margin-top:7px;">
+				<div class="a03x" style="width:159px;margin-top:7px;">
 					<span>
 						SORT BY
 						<select class="sort-select" on:change={(e) => handleFiltersAndTypes(e, 'sort')}>
@@ -169,50 +254,88 @@
 			</div>
 			<div class="flex-yxz" />
 		</div>
-		<!-- 			
-		</div> -->
+		<div class="wire" />
+		<div class="head" style="justify-content: left">
+			<span>
+				SORT TABLE
+				<select class="sort-select" on:change={(e) => sort(e)}>
+					<optgroup label="By Index">
+						<option value="index_asc">Ascending</option>
+						<option value="index_desc">Descending</option>
+					</optgroup>
+					<optgroup label="By Activeness">
+						<option value="isActive_asc">Active</option>
+						<option value="isActive_desc">Deactive</option>
+					</optgroup>
+					<optgroup label="By Title">
+						<option value="title_asc">Ascending</option>
+						<option value="title_desc">Descending</option>
+					</optgroup>
+					<optgroup label="By Category">
+						<option value="category_asc">Ascending</option>
+						<option value="category_desc">Descending</option>
+					</optgroup>
+					<optgroup label="By Date">
+						<option value="createdAt_asc">Ascending</option>
+						<option value="createdAt_desc">Descending</option>
+					</optgroup>
+				</select>
+			</span>
+			{#if selectedItems.length}
+				<button
+					title="Delete"
+					style="margin-left: 8px;background:none;border:none"
+					on:click={handleListDelete}><Icon src={Trash} /></button
+				>
+			{/if}
+		</div>
 		<div class="container">
 			<table>
 				<thead>
 					<tr class="item-head item-section" style={`background: ${getRandomColor(0.1)}`}>
 						<th>
-							<div class="flex">
+							<div>
+								<input class="check-box-selected" type="checkbox" name="" id="select-all" />
+							</div>
+						</th>
+						<th>
+							<div>
 								<Icon src={ListBullet} />
 								<span style="margin-left: 10px;">#</span>
 							</div>
 						</th>
 						<th>
-							<div class="flex">
+							<div>
 								<Icon src={Photo} />
 								<span style="margin-left: 10px;">Image</span>
 							</div>
 						</th>
 						<th class="item-name">
-							<div class="flex">
+							<div>
 								<Icon src={QueueList} />
 								<span style="margin-left: 10px;">Title</span>
 							</div>
 						</th>
 						<th>
-							<div class="flex">
+							<div>
 								<Icon src={CircleStack} />
 								<span style="margin-left: 10px;">Category</span>
 							</div>
 						</th>
 						<th>
-							<div class="flex">
+							<div>
 								<Icon src={Clock} />
 								<span style="margin-left: 10px;">Created</span>
 							</div>
 						</th>
 						<th>
-							<div class="flex">
+							<div>
 								<Icon src={Eye} />
 								<span style="margin-left: 10px;">Acitve</span>
 							</div>
 						</th>
 						<th>
-							<div class="flex">
+							<div>
 								<Icon src={Cog6Tooth} />
 								<span style="margin-left: 10px;">Action</span>
 							</div>
@@ -225,6 +348,13 @@
 							class="fade-in item-section list"
 							style={`background: ${getRandomColor(0.1)};animation-delay: ${index * 100}ms`}
 						>
+							<td style="text-align:center;"
+								><input
+									type="checkbox"
+									class="check-box-selected selector-list"
+									data-id={item._id}
+								/></td
+							>
 							<td>{item.index}</td>
 							<td>
 								{#if item.images.length}
@@ -238,9 +368,9 @@
 									<Icon src={Photo} class="image-alter" />
 								{/if}
 							</td>
-							<td class="item-name">{item.title}</td>
-							<td class="item-cat">{item.category}</td>
-							<td>{life(item.createdAt).from()}</td>
+							<td>{item.title}</td>
+							<td class="fs-12 capi">{item.category ? `${item.category_type} - ${item.category}` : 'NULL'}</td>
+							<td class="fs-12">{life(item.createdAt).from()}</td>
 							<td
 								>{#if item.isActive}<Icon src={Eye} /> {:else} <Icon src={EyeSlash} />{/if}</td
 							>
@@ -248,7 +378,7 @@
 								<button title="Edit" on:click={() => goto(`/product-manager/${item._id}`)}
 									><Icon src={Wrench} /></button
 								>
-								<button title="Delete" style="margin-left: 8px;" on:click={() => handleDelete(item)}
+								<button title="Delete" on:click={() => handleDelete(item)}
 									><Icon src={Trash} /></button
 								>
 							</td>
@@ -258,43 +388,45 @@
 				<tfoot>
 					<tr class="item-head item-section" style={`background: ${getRandomColor(0.1)}`}>
 						<th>
-							<div class="flex">
+						</th>
+						<th>
+							<div>
 								<Icon src={ListBullet} />
 								<span style="margin-left: 10px;">#</span>
 							</div>
 						</th>
 						<th>
-							<div class="flex">
+							<div>
 								<Icon src={Photo} />
 								<span style="margin-left: 10px;">Image</span>
 							</div>
 						</th>
 						<th class="item-name">
-							<div class="flex">
+							<div>
 								<Icon src={QueueList} />
 								<span style="margin-left: 10px;">Title</span>
 							</div>
 						</th>
 						<th>
-							<div class="flex">
+							<div>
 								<Icon src={CircleStack} />
 								<span style="margin-left: 10px;">Category</span>
 							</div>
 						</th>
 						<th>
-							<div class="flex">
+							<div>
 								<Icon src={Clock} />
 								<span style="margin-left: 10px;">Created</span>
 							</div>
 						</th>
 						<th>
-							<div class="flex">
+							<div>
 								<Icon src={Eye} />
 								<span style="margin-left: 10px;">Acitve</span>
 							</div>
 						</th>
 						<th>
-							<div class="flex">
+							<div>
 								<Icon src={Cog6Tooth} />
 								<span style="margin-left: 10px;">Action</span>
 							</div>
@@ -303,11 +435,25 @@
 				</tfoot>
 			</table>
 		</div>
-		<Pagination renderFor={`/products/`} counter_model={`products`} pageNo={data.pageNo} />
+		<Pagination
+			{filtered_total_items}
+			renderFor={`/products/`}
+			counter_model={`products`}
+			pageNo={data.pageNo}
+		/>
 	</div>
 </div>
 
 <style lang="scss">
+	table td,
+	table th {
+		text-align: center;
+	}
+	.check-box-selected {
+		width: 17px;
+		height: 17px;
+		margin: auto;
+	}
 	.product-list-view {
 		.item-section {
 			& img {

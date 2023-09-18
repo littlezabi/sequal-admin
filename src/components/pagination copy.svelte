@@ -15,22 +15,22 @@
 	export let pageNo = 0;
 	export let counter_model: string;
 	export let renderFor = '';
-	export let filtered_total_items: number = 0;
+	export let filtered_total_items:number = 0
 	let loaded: boolean = false;
 	const generatePagi = async () => {
 		if (loaded) {
-			if (!filtered_total_items) {
-				let __count__ = $static_data.counter;
-				if (!__count__) {
-					const res = await fetch(`/api/get-items?count-items=1`)
-						.then((e) => e.json())
-						.catch((e) => e);
-					updateStaticData({ counter: res.counter });
-					__count__ = res.counter;
-					loading = false;
-					calculateStartAndEndPage(res.counter[counter_model]);
-				} else calculateStartAndEndPage(__count__[counter_model]);
-			} else calculateStartAndEndPage(filtered_total_items);
+			if(!filtered_total_items){
+			let __count__ = $static_data.counter;
+			if (!__count__) {
+				const res = await fetch(`/api/get-items?count-items=1`)
+					.then((e) => e.json())
+					.catch((e) => e);
+				updateStaticData({ counter: res.counter });
+				__count__ = res.counter;
+				loading = false;
+				calculateStartAndEndPage(res.counter[counter_model]);
+			} else calculateStartAndEndPage(__count__[counter_model]);
+		}else calculateStartAndEndPage(filtered_total_items);
 		}
 	};
 	let loading = true;
@@ -46,7 +46,7 @@
 		return Array.from({ length: end - start + 1 }, (_, i) => start + i);
 	}
 	function calculateStartAndEndPage(__count__: number) {
-		totalPages = Math.abs(Math.ceil(__count__ / itemPerPage));
+		totalPages = Math.abs(Math.ceil(__count__ / 2));
 		if (totalPages <= paginateButtonShow) {
 			startPage = 0;
 			endPage = totalPages - 1;
@@ -59,17 +59,16 @@
 				startPage = endPage - paginateButtonShow + 1;
 			}
 		}
-		loading = false;
+		loading = false
 	}
-	const renderPageTo = (pageNo: number) => {
+	const renderPageTo = (to:string) => {
 		let query = $page.url.search;
-		let cNum = $page.url.searchParams.get('p');
-		if (cNum) {
-			query = query.replace(`p=${cNum}`, `p=${pageNo}`);
-			return renderFor + query;
-		} else
-			return query.includes('?') ? renderFor + query + '&p=' + pageNo : renderFor + '?p=' + pageNo;
-	};
+		console.log(query)
+		if(to === 'f'){
+
+		}
+		return to
+	}
 </script>
 
 <div class="pagination">
@@ -84,12 +83,15 @@
 		</div>
 		<div class="pagination-links">
 			{#if startPage > 0}
-				<a href={renderPageTo(1)} title="Go to first page">
+				<!-- <a href={filtered_total_items ? '&p=1' : `${renderFor}`} title="Go to first page">
+					<Icon style="width: 20px;color: #ffffff87;" src={ChevronDoubleLeft} />
+				</a> -->
+				<a href={renderPageTo('f')} title="Go to first page">
 					<Icon style="width: 20px;color: #ffffff87;" src={ChevronDoubleLeft} />
 				</a>
 			{/if}
 			<a
-				href={renderPageTo(pageNo - 1)}
+				href={`${renderFor}?p=${pageNo - 1}`}
 				class={pageNo === 0 ? 'disabled' : ''}
 				title="Go to previous page"
 			>
@@ -97,7 +99,7 @@
 			</a>
 			{#each range(startPage, endPage) as page}
 				<a
-					href={renderPageTo(page + 1)}
+					href={`${renderFor}?p=${page + 1}`}
 					class={page === pageNo ? 'active' : ''}
 					title={`Go to page ${page + 1}`}
 				>
@@ -105,14 +107,14 @@
 				</a>
 			{/each}
 			<a
-				href={renderPageTo(pageNo + 2)}
+				href={`${renderFor}?p=${pageNo + 2}`}
 				class={pageNo === totalPages - 1 ? 'disabled' : ''}
 				title="Go to next page"
 			>
 				<Icon style="width: 20px;color: #ffffff87;" src={ChevronRight} />
 			</a>
 			{#if endPage < totalPages - 1}
-				<a href={renderPageTo(totalPages)} title="Go to last page">
+				<a href={`${renderFor}?p=${totalPages}`} title="Go to last page">
 					<Icon style="width: 20px;color: #ffffff87;" src={ChevronDoubleRight} />
 				</a>
 			{/if}

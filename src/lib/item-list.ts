@@ -44,19 +44,12 @@ export const productList = async (
 		} catch (e) {
 			category = false;
 		}
-		match = match
-			? {$and: [{ category }, { ...match }]}
-			: {category};
+		match = match ? { $and: [{ category }, { ...match }] } : { category };
 	}
 	if (ctype) {
-		match = match
-			? {$and: [{ 'cat.type': ctype }, { ...match }]}
-			: {'cat.type': ctype};
+		match = match ? { $and: [{ 'cat.type': ctype }, { ...match }] } : { 'cat.type': ctype };
 	}
 	let pipleline: any = [
-		{ $skip: startIndex },
-		{ $limit: limit },
-		{ $sort: { [sort[0]]: sort[1] } },
 		{
 			$lookup: {
 				from: 'categories',
@@ -65,29 +58,54 @@ export const productList = async (
 				as: 'cat'
 			}
 		},
-		{ $match: match ? match : {} },
-		{ $unwind: '$cat' },
 		{
-			$project: {
-				...projectSmart,
-				'cat.category': 1,
-				'cat._id': 1,
-				'cat.type': 1
+			$unwind: {
+				path: '$category',
+				preserveNullAndEmptyArrays: true
+			}
+		},
+		{ $match: match ? match : {} },
+		{
+			$facet: {
+				count: [{ $count: 'total' }],
+				results: [
+					{ $skip: startIndex },
+					{ $limit: limit },
+					{ $sort: { [sort[0]]: sort[1] } },
+					{
+						$project: {
+							...projectSmart,
+							'cat.category': 1,
+							'cat._id': 1,
+							'cat.type': 1
+						}
+					}
+				]
 			}
 		}
 	];
 	const list = await Products.aggregate(pipleline).exec();
-	return list.map((e: any, i: number) => {
-		let x = {
-			...e,
-			images: e.images.length > 1 ? [e.images[0]] : e.images,
-			category: e.cat.category,
-			category_id: e.cat._id,
-			index: ++i + startIndex
-		};
-		delete x.cat;
-		return x;
-	});
+	return {
+		total: list[0]?.count[0]?.total,
+		mobiles: list[0].results.map((e: any, i: number) => {
+			let cats = {};
+			if (e.cat[0] && e.cat[0].category) {
+				cats = {
+					category: e.cat[0].category,
+					category_id: e.cat[0]._id,
+					category_type: e.cat[0].type
+				};
+			}
+			let x = {
+				...e,
+				images: e.images.length > 1 ? [e.images[0]] : e.images,
+				...cats,
+				index: ++i + startIndex
+			};
+			delete x.cat;
+			return x;
+		})
+	};
 };
 export const mobileList = async (startIndex: number, limit: number) => {
 	const list = await smartModel
