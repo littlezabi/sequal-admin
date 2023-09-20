@@ -199,6 +199,16 @@ img {
 		object-fit: cover;
 	}
 }
+::selection{
+		background: rgba(0, 0, 255, 0.544);
+	}
+
+
+.dark{
+	.blw-wrap section.edit-sec button img{
+		filter:invert(1)
+	}
+}
 .reply-btn svg {
 	color: #6a6868;
 }

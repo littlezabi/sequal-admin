@@ -2,7 +2,6 @@
 	import axios from 'axios';
 	import {
 		ArrowPath,
-		ArrowUpOnSquare,
 		CloudArrowUp,
 		Icon,
 		Minus,
@@ -17,6 +16,7 @@
 	import type { PageData } from './$types';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
+	import Blueword from '$compo/blueword/blueword.svelte';
 	export let data: PageData;
 	let action = data.action;
 	let message: any = false;
@@ -438,14 +438,8 @@
 				</div>
 				<div class="flex-yxz">
 					<div class="a03x full-w">
-						<label for="description">DESCRIBE PRODUCT IN DETAILS</label>
-						<textarea
-							name="description"
-							id="description"
-							placeholder="Describe your product in details"
-							on:change={addToDataframe}
-							>{action !== 'new' ? dataFrame.data.description : ''}</textarea
-						>
+						{dataFrame.data.description}
+						<Blueword title={"DESCRIBE PRODUCT IN DETAILS"}/>
 					</div>
 				</div>
 				<div class="flex-yxz">

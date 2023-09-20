@@ -70,7 +70,7 @@ interface Message{
 	closing_time?: number | null;
 }
 export const messages: Writable<Message> = writable({ message: false, variant: 'success', closing_time: 6000 });
-export const updateMessages: any = (new_message: Message|null) =>
+export const updateMessages = (new_message: Message|null) =>
 	messages.update(() => {
 		if (new_message) return { variant: 'success', ...new_message };
 		return { message: false };
