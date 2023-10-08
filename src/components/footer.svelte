@@ -1,9 +1,9 @@
 <script>
-	import logoIcon from '$img/logo-white.png';
-	import github from '$lib/assets/github.svg';
-	import youtube from '$lib/assets/youtube.svg';
-	import facebook from '$lib/assets/facebook.svg';
-	import twitter from '$lib/assets/twitter.svg';
+	// import logoIcon from '$img/logo-white.png';
+	// import github from '$lib/assets/github.svg';
+	// import youtube from '$lib/assets/youtube.svg';
+	// import facebook from '$lib/assets/facebook.svg';
+	// import twitter from '$lib/assets/twitter.svg';
 	import { WEBSITE_NAME } from '$lib/constant';
 </script>
 

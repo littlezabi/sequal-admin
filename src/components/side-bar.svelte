@@ -150,8 +150,6 @@
 					& span {
 						margin: 0;
 						font-size: 0px;
-						//     opacity: 0;
-						//     transform: scale(0);
 					}
 				}
 			}

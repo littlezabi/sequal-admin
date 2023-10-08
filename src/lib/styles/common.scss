@@ -36,12 +36,25 @@ li {
 		border: 2px solid transparent;
 		color: var(--elements-hover);
 	}
-	& a.active {
-		& svg {
-			border-color: #9c8aa987;
-			background: #b7b6b84a;
+	& a::after{
+		content: "";
+		width: 3px;
+		height: 27px;
+		background: transparent;
+		border-radius: 4px;
+		position: absolute;
+		left: -1px;
+		transition: 400ms;
+	}
+	& a.active, & a:hover {
+		&::after{
+			background: #005fff;
 		}
 	}
+}
+.fontSizeInput.active{
+	background: #06069a !important;
+	color: white !important;
 }
 a {
 	text-decoration: none;

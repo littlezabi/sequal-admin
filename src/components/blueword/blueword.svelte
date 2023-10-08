@@ -10,7 +10,7 @@
 		Icon,
 		Scissors
 	} from 'svelte-hero-icons';
-	import { fly, slide } from 'svelte/transition';
+	import { slide } from 'svelte/transition';
 	import FontsComponent from './fonts-component.svelte';
 	import dragIcon from '$img/drag_indicator.svg';
 	export let title: string = '';
@@ -24,8 +24,10 @@
 		key: false,
 		value: false
 	};
+	let stylePropertiesInClass: any = {};
 	let timeTimout__: any = null;
 	const getParentStyle = (selection?: any) => {
+		stylePropertiesInClass = {};
 		let r = { parentClass: '', currentClass: '' };
 		try {
 			if (!selection) selection = window.getSelection();
@@ -141,7 +143,6 @@
 			doubleClickedContextMenuToggler = false;
 		contextMenuToggler = false;
 	};
-
 	onMount(() => {
 		setupEditorContentAndCss(cssStyleObject);
 		const contextMenu: any = document.getElementById('context-menu');
@@ -171,6 +172,7 @@
 			contextMenuDoubleClick.style.top = `${y}px`;
 		};
 		const handleSelection = (e: any) => {
+			// fontSizeInput = 14
 			currentSelectionClass = '';
 			const selection: any = window.getSelection();
 			if (e.button === 0) {
@@ -181,7 +183,7 @@
 			}
 		};
 		content.addEventListener('mouseup', handleSelection);
-		// document.addEventListener('mousedown', closingModal);
+		document.addEventListener('mousedown', closingModal);
 		return () => {
 			document.removeEventListener('mousedown', closingModal);
 			content.removeEventListener('contextmenu', contextMenuOpen);
@@ -238,83 +240,120 @@
 	const renderStyleScriptForTextarea = (selector: string) => {
 		if (!selector) showCssSelectorText = { key: selector, value: false };
 		else {
+			let _object_ = cssStyleObject[selector];
+			if (!_object_) return 0;
 			let values = cssStyleObject[selector]
 				.replaceAll('{', '{\n    ')
 				.replaceAll('}', '\n}')
 				.replaceAll(';', ';\n    ')
 				.replaceAll(':', ': ');
 			showCssSelectorText = { key: selector, value: values };
-		}
-	};
-	let isDragging = false;
-	let offsetX = 0;
-	let offsetY = 0;
-
-	onMount(() => {
-		const contextMenu: any = document.querySelector('#context-menu-double-click');
-		const drago: any = document.querySelector('#grabDrag');
-		function handleDragStart(event:any) {
-			isDragging = true;
-			offsetX = event.clientX - event.target.getBoundingClientRect().left;
-			offsetY = event.clientY - event.target.getBoundingClientRect().top;
-		}
-
-		function handleDrag(event:any) {
-			if (isDragging) {
-				const newX = event.clientX - offsetX;
-				const newY = event.clientY - offsetY;
-				event.target.style.left = `${newX}px`;
-				event.target.style.top = `${newY}px`;
-				console.log('draggin.. start ', offsetX);
+			let _ux_ = _object_.replaceAll(/\{|}/gi, '').split(';');
+			for (let a of _ux_) {
+				let v = a.split(':');
+				if (v[0] !== '' && v[1]) stylePropertiesInClass[v[0]] = v[1];
 			}
 		}
-
-		function handleDragEnd() {
-			isDragging = false;
+	};
+	// handle fonts
+	let holdFZInput = false;
+	let fontSizeInput: number = 14;
+	let appliedFZ = false;
+	const handleFKey = (buttonEvent: any) => {
+		let key = buttonEvent.key;
+		let fz: string = String(fontSizeInput);
+		if (key === 'Enter') {
+			appliedFZ = true;
+			applyStyle({ key: 'font-size', value: `${fontSizeInput}px` });
+		} else {
+			if (key === 'Backspace') {
+				if (fz.length > 0) {
+					let t = fz.substring(0, fz.length - 1);
+					fz = t ? t : '0';
+				}
+			} else {
+				if (key.match(/\d|[px]/)) {
+					if (!holdFZInput || fz === '0') fz = buttonEvent.key;
+					else fz += buttonEvent.key;
+					holdFZInput = true;
+				}
+			}
+			fontSizeInput = parseInt(fz);
+			if (fontSizeInput >= 200) fontSizeInput = 200;
 		}
-		contextMenu.addEventListener('dragstart', handleDragStart);
-		contextMenu.addEventListener('drag', handleDrag);
-		contextMenu.addEventListener('dragend', handleDragEnd);
-	});
+	};
+	const handleFontSize = (e: any) => {
+		appliedFZ = false;
+		e.target.classList.add('active');
+		window.addEventListener('keyup', handleFKey);
+	};
+	const RemHandleFontSize = (e: any) => {
+		e.target.classList.remove('active');
+		window.removeEventListener('keyup', handleFKey);
+		if (!fontSizeInput) fontSizeInput = 14;
+		holdFZInput = false;
+		if (!appliedFZ) applyStyle({ key: 'font-size', value: `${fontSizeInput}px` });
+	};
+	let openStyleSheet = false;
 </script>
 
 <div class="blw-wrap">
 	<h2>{title}</h2>
 	<div class="editing-section">
-		<div>
-			<div class="selector-list">
-				{#each Object.keys(cssStyleObject) as selectors}
-					<button class="sel392c" type="button" on:click={() => showCssStyle(selectors)}
-						>.{selectors}</button
-					>
-				{/each}
-				<div>
-					{#if showCssSelectorText.key}
-						<div transition:slide>
-							<div class="flex juex">
-								<span>.{showCssSelectorText.key}</span>
-								<button
-									type="button"
-									class="close-382x"
-									on:click={() => {
-										showCssSelectorText.key = false;
-									}}><Icon style="width:100%" src={ChevronUp} /></button
+		<div class="flex" style="margin-bottom: 10px;">
+			<label for="open-style" style="font-size: 12px;">Open Style Sheet</label>
+			<input
+				style="margin-left: 18px;"
+				on:change={() => (openStyleSheet = !openStyleSheet)}
+				type="checkbox"
+				name="open-style"
+				id="open-style"
+			/>
+		</div>
+
+		{#if openStyleSheet}
+			<div>
+				<div class="selector-list">
+					{#each Object.keys(cssStyleObject) as selectors}
+						<button class="sel392c" type="button" on:click={() => showCssStyle(selectors)}
+							>.{selectors}</button
+						>
+					{/each}
+					<div>
+						{#if showCssSelectorText.key}
+							<div transition:slide>
+								<div class="flex juex">
+									<span>.{showCssSelectorText.key}</span>
+									<button
+										type="button"
+										class="close-382x"
+										on:click={() => {
+											showCssSelectorText.key = false;
+										}}><Icon style="width:100%" src={ChevronUp} /></button
+									>
+								</div>
+								<textarea
+									class="style-space"
+									placeholder="Enter css styles here..."
+									spellcheck="false"
+									on:keyup={(e) => handleNewStyle(e, showCssSelectorText.key)}
+									on:keydown={handleStyleKeyDown}>{showCssSelectorText.value}</textarea
 								>
 							</div>
-							<textarea
-								class="style-space"
-								placeholder="Enter css styles here..."
-								spellcheck="false"
-								on:keyup={(e) => handleNewStyle(e, showCssSelectorText.key)}
-								on:keydown={handleStyleKeyDown}>{showCssSelectorText.value}</textarea
-							>
-						</div>
-					{/if}
+						{/if}
+					</div>
 				</div>
 			</div>
-		</div>
-		<FontsComponent {applyStyle} />
+		{/if}
+		<FontsComponent
+			{stylePropertiesInClass}
+			{handleFontSize}
+			{fontSizeInput}
+			{RemHandleFontSize}
+			{applyStyle}
+		/>
 	</div>
+
 	<div>
 		<div id="blw-style-content" />
 		<div
@@ -360,13 +399,16 @@
 				</div>
 			{/if}
 		</div>
-		<div class="context-menu" id="context-menu-double-click"  draggable="true">
+		<div class="context-menu" id="context-menu-double-click" draggable="true">
 			{#if doubleClickedContextMenuToggler}
 				<div class="menu-wrap" transition:slide>
-					<div>
-						<img src={dragIcon} alt="drag from here" id="grabDrag" />
-					</div>
-					<FontsComponent {applyStyle} />
+					<FontsComponent
+						{stylePropertiesInClass}
+						{fontSizeInput}
+						{handleFontSize}
+						{RemHandleFontSize}
+						{applyStyle}
+					/>
 				</div>
 			{/if}
 		</div>
@@ -430,7 +472,6 @@
 	}
 	.context-menu {
 		position: absolute;
-		overflow: hidden;
 		user-select: none;
 		box-shadow: 1px 1px 5px 1px rgba(0, 0, 0, 0.2);
 		border-radius: 9px;
