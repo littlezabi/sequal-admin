@@ -12,7 +12,7 @@ import {
 
 await database.connect();
 export const countCategories = async () => {
-	const categories = await Categories.find({}, { _id: 0, image: 0 }).lean();
+	const categories = await Categories.find({items: {$gt: 10}}, { category: 1, items: 1, _id: 0 }).lean();
 	const analytics = await Analytics.findOne({}, { _id: 0 }).lean();
 	const limit = 15;
 	let topViewsFirm = await Firmwares.find({}, { views: 1, _id: 0 })
@@ -77,19 +77,21 @@ export const countCategories = async () => {
 	topViewsFirm.map((item: any) => views_firms.push(item.views));
 	topViewsBlogs.map((item: any) => views_blogs.push(item.views));
 	topViewsLap.map((item: any) => views_computer.push(item.views));
-
-	categories.filter((cat: any) => {
-		if (!cat.category) return 0;
-		if (cat.type === 'phones') {
-			count_phones_cats[cat.category] = cat.items;
-		}
-		if (cat.type === 'laptops') {
-			count_computers_cats[cat.category] = cat.items;
-		}
-	});
+	// categories.filter((cat: any) => {
+	// 	console.log('cat: ', cat)
+	// 	categories
+	// 	return cat
+	// 	// if (!cat.category) return 0;
+	// 	// if (cat.type === 'phones') {
+	// 	// 	count_phones_cats[cat.category] = cat.items;
+	// 	// }
+	// 	// if (cat.type === 'laptops') {
+	// 	// 	count_computers_cats[cat.category] = cat.items;
+	// 	// }
+	// });
 	return {
 		chart_data: {
-			count_phones_cats,
+			categories,
 			count_computers_cats,
 			views_phones,
 			views_firms,

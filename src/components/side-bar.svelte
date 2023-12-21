@@ -9,7 +9,6 @@
 		Photo,
 		CpuChip,
 		Users,
-		ChevronLeft,
 		Tag,
 		UserGroup,
 		QueueList,
@@ -44,24 +43,24 @@
 				<span>Add New Products</span>
 			</a>
 		</li>
-		<li>
+		<!-- <li>
 			<a class={current_path === '/mobiles' ? 'flex active' : "flex"} href="/mobiles">
 				<Icon src={DevicePhoneMobile} />
 				<span>Mobile Phones</span>
 			</a>
-		</li>
+		</li> -->
 		<li>
 			<a class={current_path === '/products' ? 'flex active' : "flex"} href="/products">
 				<Icon src={QueueList} />
 				<span>Products</span>
 			</a>
 		</li>
-		<li>
+		<!-- <li>
 			<a class={current_path === '/firmwares' ? 'flex active' : "flex"} href="/">
 				<Icon src={CpuChip} />
 				<span>Firmware's</span>
 			</a>
-		</li>
+		</li> -->
 		<li>
 			<a class={current_path === '/blogs' ? 'flex active' : "flex"} href="/blogs">
 				<Icon src={ClipboardDocument} />

@@ -31,6 +31,7 @@
 	let trendingChartElement: any;
 	let visitorsChartElement: any;
 	export let countData: any;
+	console.log(countData)
 	let width: any, height: any, gradient: any;
 	function getGradient(ctx: any, chartArea: any) {
 		const chartWidth = chartArea.right - chartArea.left;
@@ -86,11 +87,11 @@
 		categoriesItemChart = new Chart(categoriesItemChart, {
 			type: 'bar',
 			data: {
-				labels: Object.keys(countData.count_phones_cats),
+				labels: countData.categories.map((e:any) => e.category),
 				datasets: [
 					{
 						label: 'Devices in each categories',
-						data: Object.values(countData.count_phones_cats),
+						data: countData.categories.map((e) => e.items),
 						...chartDatasetOptions(),
 						borderWidth: 2,
 						borderRadius: 18
@@ -155,22 +156,15 @@
 		countItemsChart = new Chart(countItemsChart, {
 			type: 'line',
 			data: {
-				labels: ['Phones', 'Watches', 'Blogs', 'Computers', 'Users'],
+				labels: countData.categories.map(e => e.category), 
 				datasets: [
 					{
 						label: 'Device types',
-						data: [
-							countData.phones,
-							countData.watches,
-							countData.blogs,
-							countData.computers,
-							countData.users
-						],
+						data: countData.categories.map(e => e.items),
 						...chartDatasetOptions(),
 						borderColor: function (context) {
 							const chart = context.chart;
 							const { ctx, chartArea } = chart;
-
 							if (!chartArea) {
 								return;
 							}
@@ -270,13 +264,13 @@
 		<div class="wire" />
 
 		<div class="flex as99932">
-			<div class="dash-super a9932" style="width: 58%">
+			<div class="dash-super a9932" style="width: 100%">
 				<canvas bind:this={countItemsChart} />
 			</div>
 
-			<div class="dash-super a9932 without-bg">
+			<!-- <div class="dash-super a9932 without-bg">
 				<canvas bind:this={dougChartOfCountItem} />
-			</div>
+			</div> -->
 		</div>
 		<div class="flex k3992">
 			<div class="dash-super count-element">

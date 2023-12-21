@@ -1,7 +1,7 @@
 import database from '$lib/database';
 import { authenticateAdmin } from '$lib/users';
 import { emptyRequest } from '../get-items/get-items';
-import { handleDeleteCategory, handleDeleteItem, handleDeleteMultipleItems, handleDeleteUser } from './handleDelete';
+import { handleDeleteCategory, handleDeleteItem,deleteCatType, handleDeleteMultipleItems, handleDeleteUser } from './handleDelete';
 
 await database.connect();
 export const POST = async ({ request, cookies }: any) => {
@@ -18,7 +18,7 @@ export const POST = async ({ request, cookies }: any) => {
 		);
     }
     const requestFor = request.headers.get('requestFor')
-
+	if(requestFor === 'deleteCatType') return await deleteCatType(body)
     if (requestFor === "deleteUser") return handleDeleteUser(body)
     if (requestFor === "deleteItem") return handleDeleteItem(body)
     if (requestFor === "deleteItemsList") return handleDeleteMultipleItems(body)

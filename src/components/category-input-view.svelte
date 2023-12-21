@@ -11,7 +11,8 @@
 	export let catTypeCB: (e: string) => void = () => {};
 	export let prev_cat: { _id?: string; type?: string } = {};
 	export let asFilter: boolean = false;
-	let categories_list: any = $static_data.categories;;
+	export let collection: string = '';
+	let categories_list: any = $static_data.categories;
 	const handleCat = (e: any) => callback(e.target.value);
 	const handlePType = (e: any, type = '') => {
 		let v = e ? (e.target as any).value : type;
@@ -20,7 +21,7 @@
 				cats = categories_list.filter((e: any) => e.type === v);
 				return 1;
 			}
-			if(v === 'all') cats = categories_list
+			if (v === 'all') cats = categories_list;
 			else cats = categories_list.filter((e: any) => e.type === v || e.type === 'all');
 		}
 		catTypeCB(v);
@@ -36,7 +37,7 @@
 				});
 				cat_loading = false;
 				categories_list = e.data.cats;
-				cats = categories_list
+				cats = categories_list;
 				types = e.data.types.categoryTypes;
 			})
 			.catch((e) => {
@@ -47,9 +48,9 @@
 	onMount(async () => {
 		if ((types && types.length === 0) || categories_list.length === 0) await getCats();
 		if (prev_cat.type) handlePType(false, prev_cat.type);
-		if (asFilter){
+		if (asFilter) {
 			categories_list = [{ category: 'all', type: 'all', _id: 'all' }, ...categories_list];
-			cats = categories_list
+			cats = categories_list;
 		}
 	});
 </script>
@@ -98,55 +99,56 @@
 			</select>
 		</div>
 	</div>
-	<div class="a03x">
-		<label for="category"
-			>{!asFilter ? 'CHOOSE RIGHT CATEGORY' : 'SELECT CATEGORY'}
-			{#if !asFilter}
-				<a
-					href="/categories"
-					class="message success"
-					style="display:inline"
-					target="_blank"
-					title="add new category">(Manage Categories)</a
-				>{/if}
-		</label>
-		<div class="flex">
-			<select name="_y_category" on:change={handleCat}>
+
+	{#if collection != 'categories'}
+		<div class="a03x">
+			<label for="category"
+				>{!asFilter ? 'CHOOSE RIGHT CATEGORY' : 'SELECT CATEGORY'}
 				{#if !asFilter}
-					<option selected value="un-selected">Select Category</option>
-				<!-- {:else}
-					<option selected value="all">ALL</option> -->
-				{/if}
-				{#if Array.isArray(cats)}
+					<a
+						href="/categories"
+						class="message success"
+						style="display:inline"
+						target="_blank"
+						title="add new category">(Manage Categories)</a
+					>{/if}
+			</label>
+			<div class="flex">
+				<select name="_y_category" on:change={handleCat}>
 					{#if !asFilter}
-						{#each cats as cat}
-							{#if prev_cat._id === cat._id}
-								<option selected value={cat._id}>{cat.type} - {cat.category}</option>
-							{:else}
-								<option value={cat._id}>{cat.type} - {cat.category}</option>
-							{/if}
-						{/each}
-					{:else}
-						{#each cats as cat}
-							{#if prev_cat._id === cat._id || prev_cat.type === cat.type}
-								<option selected value={cat._id}>{cat.category}</option>
-							{:else}
-								<option value={cat._id}>{cat.category}</option>
-							{/if}
-						{/each}
+						<option selected value="un-selected">Select Category</option>
 					{/if}
+					{#if Array.isArray(cats)}
+						{#if !asFilter}
+							{#each cats as cat}
+								{#if prev_cat._id === cat._id}
+									<option selected value={cat._id}>{cat.type} - {cat.category}</option>
+								{:else}
+									<option value={cat._id}>{cat.type} - {cat.category}</option>
+								{/if}
+							{/each}
+						{:else}
+							{#each cats as cat}
+								{#if prev_cat._id === cat._id || prev_cat.type === cat.type}
+									<option selected value={cat._id}>{cat.category}</option>
+								{:else}
+									<option value={cat._id}>{cat.category}</option>
+								{/if}
+							{/each}
+						{/if}
+					{/if}
+				</select>
+				{#if !asFilter}
+					<button
+						class="btn btn-small"
+						type="button"
+						style="margin:0 0 0 19px;width:46px;height:42px;"
+						on:click={getCats}
+					>
+						<Icon class={cat_loading ? 'anim-rotate' : ''} src={ArrowPath} />
+					</button>
 				{/if}
-			</select>
-			{#if !asFilter}
-				<button
-					class="btn btn-small"
-					type="button"
-					style="margin:0 0 0 19px;width:46px;height:42px;"
-					on:click={getCats}
-				>
-					<Icon class={cat_loading ? 'anim-rotate' : ''} src={ArrowPath} />
-				</button>
-			{/if}
+			</div>
 		</div>
-	</div>
+	{/if}
 </div>

@@ -1,6 +1,6 @@
 import { authenticateAdmin } from '$lib/users';
 import { handleCategories, handleDeviceUpdate, handleProduct } from '../update-items/handlers';
-import { handleUser } from './set-items';
+import { handleUser, setCatType } from './set-items';
 
 export const POST = async ({ request, cookies }: any) => {
 	let authenticated = await authenticateAdmin(cookies.get('admin'));
@@ -15,6 +15,7 @@ export const POST = async ({ request, cookies }: any) => {
 		);
 	}
 	const requestFor = request.headers.get('requestFor')
+	if (requestFor === 'setCatType') return setCatType(await request.formData(), 'new');
 	if (requestFor === 'newCategory') return handleCategories(await request.formData(), 'new')
 	if (requestFor === 'newDeviceReq') return handleDeviceUpdate(await request.formData(), 'new')
 	if (requestFor === 'product-new') return handleProduct(await request.formData(), 'new')

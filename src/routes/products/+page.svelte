@@ -26,46 +26,14 @@
 	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
 	import CategoryInputView from '$compo/category-input-view.svelte';
+	import ListHeadFilters from '$compo/list-head-filters.svelte';
 	export let data: PageData;
 	let items: any = data.list;
 	let filtered_total_items = 0;
 	$: data.pageNo, (items = data.list), (filtered_total_items = data.total);
 
 	let selectedItems: string[] = [];
-	const handleListDelete = () => {
-		if (selectedItems.length)
-			promptModalUpdate({
-				visible: true,
-				title: `CONFIRM ${selectedItems.length > 1 ? "MULTIPLE DELETE'S" : 'DELETE'} `,
-				description: `Are you sure you want to delete the item'${
-					selectedItems.length > 1 ? 's' : ''
-				}'? Please proceed with caution, as this action is irreversible and cannot be undone.`,
-				confirm: [
-					{
-						title: 'DELETE',
-						class: 'bg-danger',
-						callback: async () => {
-							await axios
-								.post(
-									'/api/delete-items',
-									{ listIDs: selectedItems, model: 'product' },
-									{ headers: { requestFor: 'deleteItemsList' } }
-								)
-								.then((e) => {
-									updateMessages({
-										message: e.data.message,
-										variant: e.data.success ? 'success' : 'alert'
-									});
-									if (e.data.success) goto(`/products/${$page.url.search}`);
-									promptModalUpdate({ visible: false });
-								})
-								.catch((e) => console.error(e));
-						},
-						type: 'button'
-					}
-				]
-			});
-	};
+
 	const handleDelete = (item: any) => {
 		promptModalUpdate({
 			visible: true,
@@ -176,9 +144,6 @@
 	};
 </script>
 
-{#if $modal.visible}
-	<SmartDeviceView />
-{/if}
 <div transition:fade>
 	<h2>Products List</h2>
 	<div class="product-list-view">
@@ -194,101 +159,14 @@
 				</button>
 			</div>
 		</div>
-		<div class="form">
-			<h3 style="margin:0;">Filters Products view</h3>
-			<div class="flex-yxz">
-				<div class="a03x" style="width:500px;margin-top:7px;">
-					<CategoryInputView
-						{prev_cat}
-						catTypeCB={(e) => {
-							handleFiltersAndTypes(e, 'category-type');
-						}}
-						asFilter={true}
-						callback={(e) => handleFiltersAndTypes(e, 'category')}
-					/>
-				</div>
-				<div class="a03x" style="width:129px;margin-top:7px;">
-					<span>
-						FILTER
-						<select class="sort-select" on:change={(e) => handleFiltersAndTypes(e, 'filter')}>
-							<option value="all">All</option>
-							<option value="asDraft_1">Drafts</option>
-							<option value="asDraft_0">Posted</option>
-						</select>
-					</span>
-				</div>
-				<div class="a03x" style="width:159px;margin-top:7px;">
-					<span>
-						SORT BY
-						<select class="sort-select" on:change={(e) => handleFiltersAndTypes(e, 'sort')}>
-							<optgroup label="By Index">
-								<option value="id_asc">Ascending</option>
-								<option value="id_desc">Descending</option>
-							</optgroup>
-							<optgroup label="By Activeness">
-								<option value="isActive_asc">Active</option>
-								<option value="isActive_desc">Deactive</option>
-							</optgroup>
-							<optgroup label="By Title">
-								<option value="title_asc">Ascending</option>
-								<option value="title_desc">Descending</option>
-							</optgroup>
-							<optgroup label="By Category">
-								<option value="category_asc">Ascending</option>
-								<option value="category_desc">Descending</option>
-							</optgroup>
-							<optgroup label="By Date">
-								<option value="createdAt_asc">Ascending</option>
-								<option value="createdAt_desc">Descending</option>
-							</optgroup>
-						</select>
-					</span>
-				</div>
-				<button
-					class="btn flex"
-					style="width: 148px;height: 45px;margin-left:4px;"
-					on:click={handleFilteredSearch}
-				>
-					<Icon src={Funnel} />SEARCH
-				</button>
-			</div>
-			<div class="flex-yxz" />
-		</div>
-		<div class="wire" />
-		<div class="head" style="justify-content: left">
-			<span>
-				SORT TABLE
-				<select class="sort-select" on:change={(e) => sort(e)}>
-					<optgroup label="By Index">
-						<option value="index_asc">Ascending</option>
-						<option value="index_desc">Descending</option>
-					</optgroup>
-					<optgroup label="By Activeness">
-						<option value="isActive_asc">Active</option>
-						<option value="isActive_desc">Deactive</option>
-					</optgroup>
-					<optgroup label="By Title">
-						<option value="title_asc">Ascending</option>
-						<option value="title_desc">Descending</option>
-					</optgroup>
-					<optgroup label="By Category">
-						<option value="category_asc">Ascending</option>
-						<option value="category_desc">Descending</option>
-					</optgroup>
-					<optgroup label="By Date">
-						<option value="createdAt_asc">Ascending</option>
-						<option value="createdAt_desc">Descending</option>
-					</optgroup>
-				</select>
-			</span>
-			{#if selectedItems.length}
-				<button
-					title="Delete"
-					style="margin-left: 8px;background:none;border:none"
-					on:click={handleListDelete}><Icon src={Trash} /></button
-				>
-			{/if}
-		</div>
+		<ListHeadFilters
+			{prev_cat}
+			{selectedItems}
+			{handleFilteredSearch}
+			{handleFiltersAndTypes}
+			{sort}
+			collection="product"
+		/>
 		<div class="container">
 			<table>
 				<thead>
@@ -369,7 +247,9 @@
 								{/if}
 							</td>
 							<td>{item.title}</td>
-							<td class="fs-12 capi">{item.category ? `${item.category_type} - ${item.category}` : 'NULL'}</td>
+							<td class="fs-12 capi"
+								>{item.category ? `${item.category_type} - ${item.category}` : 'NULL'}</td
+							>
 							<td class="fs-12">{life(item.createdAt).from()}</td>
 							<td
 								>{#if item.isActive}<Icon src={Eye} /> {:else} <Icon src={EyeSlash} />{/if}</td
@@ -387,8 +267,7 @@
 				</tbody>
 				<tfoot>
 					<tr class="item-head item-section" style={`background: ${getRandomColor(0.1)}`}>
-						<th>
-						</th>
+						<th />
 						<th>
 							<div>
 								<Icon src={ListBullet} />

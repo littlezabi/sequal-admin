@@ -10,7 +10,16 @@ const AdminSchema = new mongoose.Schema({
 	lastLogin: { type: String, require: false },
 	active: { type: Boolean, default: true }
 });
-
+const categoryTypesSchema = new mongoose.Schema(
+	{
+		title: {type: String, required: true, default: 'general', unique: true},
+		categories: {type: Number, default: 0},
+		description: {type: String, required: false }
+	},
+	{
+		timestamps: true
+	}
+)
 const SettingsSchema = new mongoose.Schema(
 	{
 		websiteName: { type: String, default: 'Sequel Blue' },
@@ -46,7 +55,6 @@ const SettingsSchema = new mongoose.Schema(
 			default: getRandomChar(100, {})
 		}, 
 		UserProfilePictureWidth: {type: Number, default: 320, required: true},
-		categoryTypes: {type:Array, default: ['general']}
 	},
 	{
 		timestamps: true
@@ -195,10 +203,11 @@ const smartSchema = new mongoose.Schema(
 
 const categoriesSchema = new mongoose.Schema(
 	{
-		category: { type: String, required: true },
-		type: { type: String, required: true },
+		category: { type: String, required: true},
+		type: { type: mongoose.Types.ObjectId, ref: 'category_types', required: true },
 		items: { type: Number, default: 0 },
-		image: { type: String, required: true, default: '/images/logos/category.svg' }
+		image: { type: String, required: true, default: '/images/logos/category.svg' },
+		description: {type: String, required: false}
 	},
 	{
 		timestamps: true,
@@ -252,3 +261,4 @@ export const Analytics: any =
 	mongoose.models.analytics || mongoose.model('analytics', AnalyticsSchema);
 export const Settings: any = mongoose.models.settings || mongoose.model('settings', SettingsSchema);
 export const Admin: any = mongoose.models.admins || mongoose.model('admins', AdminSchema);
+export const CategoryTypes: any = mongoose.models.category_types || mongoose.model('category_types', categoryTypesSchema);

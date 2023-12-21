@@ -17,16 +17,27 @@
 					<div class="flex-yxz">
 						{#each $promptModal.form.inputs as input, i}
 							<div class="a03x full-w">
-								<label for="new-key">{input.label}</label>
-								<input
-									type={input.type ? input.type : 'text'}
-									name={input.name ? input.name : 'input_' + i}
-									id={input.id ? input.id : 'id_' + i}
-									value={input.value ? input.value : ''}
-									placeholder={input.placeholder ? input.placeholder : 'Enter text here....'}
-									on:change={input.callback ? input.callback : () => {}}
-									required={input.required ? input.required : false}
-								/>
+								<label for={input.id ? input.id : 'id_' + i}>{input.label}</label>
+								{#if input.type === 'textarea'}
+									<textarea
+										name={input.name ? input.name : 'input_' + i}
+										id={input.id ? input.id : 'id_' + i}
+										placeholder={input.placeholder ? input.placeholder : 'Enter text here....'}
+										on:change={input.callback ? input.callback : () => {}}
+										required={input.required ? input.required : false}
+										>{input.value ? input.value : ''}</textarea
+									>
+								{:else}
+									<input
+										type={input.type ? input.type : 'text'}
+										name={input.name ? input.name : 'input_' + i}
+										id={input.id ? input.id : 'id_' + i}
+										value={input.value ? input.value : ''}
+										placeholder={input.placeholder ? input.placeholder : 'Enter text here....'}
+										on:change={input.callback ? input.callback : () => {}}
+										required={input.required ? input.required : false}
+									/>
+								{/if}
 							</div>
 						{/each}
 					</div>

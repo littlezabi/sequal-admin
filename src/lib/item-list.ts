@@ -1,6 +1,7 @@
 import database from './database';
-import { Admin, Products, Settings, Users, Categories, smartModel } from '$lib/models';
+import { Admin, Products, Settings, Users, Categories, smartModel, CategoryTypes } from '$lib/models';
 import mongoose from 'mongoose';
+import { parse } from './globals';
 
 await database.connect();
 const projectSmart = {
@@ -11,9 +12,54 @@ const projectSmart = {
 	createdAt: 1,
 	isActive: 1
 };
-export const getCategories = async (skip: number = 0, limit: number = 20) => {
-	return await Categories.find().skip(skip).limit(limit).sort('-_id');
+
+export const getCategories  = async (
+	startIndex: number,
+	limit: number,
+	ctype: string,
+	category: any,
+	filter: any,
+	sort: string[]
+) => {
+	let match: any = false;
+	if (filter) match = { [filter[0]]: filter[1] };
+	if (category) {
+		try {
+			category = new mongoose.Types.ObjectId(category);
+		} catch (e) {
+			category = false;
+		}
+		match = match ? { $and: [{ category }, { ...match }] } : { category };
+	}
+	if (ctype) {
+		match = match ? { $and: [{ 'type': ctype }, { ...match }] } : { 'type': ctype };
+	}
+	let pipleline: any = [
+		{ $match: match ? match : {} },
+		{
+			$facet: {
+				count: [{ $count: 'total' }],
+				results: [
+					{ $skip: startIndex },
+					{ $limit: limit },
+					{ $sort: { [sort[0]]: sort[1] } },
+				]
+			}
+		}
+	];
+	const list = await Categories.aggregate(pipleline).exec();
+	return {
+		total: list[0]?.count[0]?.total,
+		categories: list[0].results.map((e: any, i: number) => {
+			let x = {
+				...e,
+				index: ++i + startIndex
+			};
+			return x;
+		})
+	};
 };
+
 export const getProduct = async (_id: string) => {
 	try {
 		const product = await Products.findOne({ _id }).lean();
@@ -149,8 +195,10 @@ export const mobileList = async (startIndex: number, limit: number) => {
 	});
 };
 
-export const getSettings = async (): Promise<object[]> =>
-	await Settings.findOne({}, { cookiesOptions: 0, oneTimeAdminLoginKey: 0, updatedAt: 0 });
+export const getSettings = async (): Promise<object[]> =>{
+	const catTypes = await CategoryTypes.find().sort('-_id');
+	return await Settings.findOne({}, { cookiesOptions: 0, oneTimeAdminLoginKey: 0, updatedAt: 0 });
+}
 
 export const getUsers = async (
 	startIndex: number = 0,

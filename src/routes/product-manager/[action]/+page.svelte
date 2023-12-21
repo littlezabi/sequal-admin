@@ -1,13 +1,6 @@
 <script lang="ts">
 	import axios from 'axios';
-	import {
-		ArrowPath,
-		CloudArrowUp,
-		Icon,
-		Minus,
-		Plus,
-		XMark
-	} from 'svelte-hero-icons';
+	import { ArrowPath, CloudArrowUp, Icon, Minus, Plus, XMark } from 'svelte-hero-icons';
 	import { promptModalUpdate, static_data, updateMessages } from '$lib/store';
 	import CustomNumberInput from '$compo/custom-number-input.svelte';
 	import HandleImages from '$compo/handle-images.svelte';
@@ -16,7 +9,6 @@
 	import type { PageData } from './$types';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
-	import Blueword from '$compo/blueword/blueword.svelte';
 	export let data: PageData;
 	let action = data.action;
 	let message: any = false;
@@ -81,17 +73,21 @@
 			dataFrame.data.asDraft = true;
 			postDataframe(true);
 		}
-		if (m) updateMessages({ message: m, variant: m.includes('success') ? 'success' : 'alert' });
+		if (m) {
+			saving_draft_loading = false;
+			updateMessages({ message: m, variant: m.includes('success') ? 'success' : 'alert' });
+		}
 	};
 	const postDataframe = async (asDraft: boolean = false) => {
-		dataFrame.data.asDraft = asDraft
-		console.log(dataFrame)
+		console.log(dataFrame.data);
+		// return 0
+		dataFrame.data.asDraft = asDraft;
 		const form = new FormData();
 		if (dataFrame.images)
 			dataFrame.images.forEach((e: File, i: number) => form.append(`image_${i}`, e));
 		form.append('df', JSON.stringify(dataFrame.data));
 		form.append('info', JSON.stringify(dataFrame.info));
-		
+
 		if (dataFrame.info.removeImages && dataFrame.info.removeImages.length)
 			form.append('removeImages', dataFrame.info.removeImages);
 		await axios
@@ -103,8 +99,8 @@
 				if (dataFrame.data.asDraft) {
 					saving_draft_loading = false;
 					spreadDfItems(res.product);
-					if (action === 'new') goto(`/product-manager/${res.product._id}`, {replaceState:true});
-					action = 'edit'
+					if (action === 'new') goto(`/product-manager/${res.product._id}`, { replaceState: true });
+					action = 'edit';
 				}
 				if (res.error && res.error === 'unauthenticated_user') {
 					message = { message: 'unauthenticated user please login!', variant: 'danger' };
@@ -143,16 +139,23 @@
 		const spec_value: any = document.getElementById('new-spec-value');
 		[spec_name, spec_title, spec_value].forEach((e) => (e.style.borderBottomColor = '#5f5f5f52'));
 		updateMessages({ message: false });
-		if (spec_title.value !== '') {
-			if (Object.keys(dataFrame.data).includes(spec_title.value.toLowerCase())) {
-				updateMessages({
-					message: 'Specification title is already exist!',
-					variant: 'alert',
-					closing_time: 10000
-				});
-				spec_title.style.borderBottomColor = '#ff0057';
-				return 0;
-			}
+		let datakeys = Object.keys(dataFrame.data.specs_list);
+		let m: boolean | string = false;
+		if (spec_title.value !== '' && datakeys.includes(spec_title.value.toLowerCase())) {
+			m = 'Specification title is already exist!';
+			spec_title.style.borderBottomColor = '#ff0057';
+		}
+		if (spec_title.value === '' && datakeys.includes(spec_name.value.toLowerCase())) {
+			m = 'Specification name is already exist!';
+			spec_name.style.borderBottomColor = '#ff0057';
+		}
+		if (m) {
+			updateMessages({
+				message: m,
+				variant: 'alert',
+				closing_time: 10000
+			});
+			return 0;
 		}
 		if (spec_name.value !== '') {
 			if (spec_value.value !== '') {
@@ -199,7 +202,7 @@
 
 	const handleHeadersArea = (e: any) => {
 		changes_saved = false;
-		updateMessages();
+		updateMessages({ message: false });
 		let h = e.target.value.trim().split('\n');
 		let x: any = [];
 		for (let t of h) if (!x.includes(t.trim()) && t !== '') x.push(t.trim());
@@ -226,6 +229,19 @@
 	const addToDataframe = (e: any) => {
 		let name = e.target.name;
 		let value = e.target.value;
+		if (name.includes('_x_')) {
+			try {
+				let s = name.split('___')[0];
+				let i = name.split('_x_')[0].split('___')[1];
+				let k = name.split('_x_')[1];
+				dataFrame.data['specs_list'][s][i][k] = value;
+			} catch (e) {
+				updateMessages({
+					message: 'Input field is not updated! please try again',
+					variant: 'danger'
+				});
+			}
+		}
 		if (name === 'slug') handleSlug(e);
 		else if (name === 'title') {
 			dataFrame.data.title = value;
@@ -273,25 +289,6 @@
 			]
 		});
 		changes_saved = false;
-	};
-	const addToHeader = (value: string) => {
-		changes_saved = false;
-		let m: boolean | string = false;
-		if (dataFrame.data.headers.length >= $static_data.settings.deviceViewHeaderTextLength)
-			m = `headers limit is ${$static_data.settings.deviceViewHeaderTextLength} we can't add more.`;
-		if (!m && dataFrame.data.headers.includes(value)) m = `(${value}) already exist on headers.`;
-		if (!m && value !== '') {
-			dataFrame.data.headers = [...dataFrame.data.headers, value];
-			headersToString();
-			m = `(${value}) added to headers.`;
-		}
-		if (m) {
-			updateMessages({
-				message: m,
-				variant: m.includes('exist') || m.includes("can't") ? 'alert' : 'success'
-			});
-			return 0;
-		}
 	};
 	const __cxd = (e: Event): void => {
 		if (e.target instanceof HTMLInputElement) {
@@ -406,7 +403,10 @@
 				</div>
 				<CategoryInputView
 					prev_cat={action !== 'new' && !dataFrame.data.asDraft ? data.category : {}}
-					callback={(e) => (dataFrame.data.category ? dataFrame.info.new_category = e : dataFrame.data.category = e)}
+					callback={(e) =>
+						dataFrame.data.category
+							? (dataFrame.info.new_category = e)
+							: (dataFrame.data.category = e)}
 				/>
 				<div class="flex-yxz">
 					<div class="a03x">
@@ -438,8 +438,10 @@
 				</div>
 				<div class="flex-yxz">
 					<div class="a03x full-w">
-						{dataFrame.data.description}
-						<Blueword title={"DESCRIBE PRODUCT IN DETAILS"}/>
+						<label for="description"> ADD PRODUCT HEADERS TEXT </label>
+						<textarea id="description" placeholder="Add informative description of product" name="description" on:change={addToDataframe}
+							>{dataFrame.data.description}</textarea
+						>
 					</div>
 				</div>
 				<div class="flex-yxz">
@@ -451,6 +453,7 @@
 									.deviceViewHeaderTextLength} headers. use shortest lines)
 							</small>
 						</label>
+
 						<textarea
 							name="headers"
 							id="headers"
@@ -460,8 +463,8 @@
 					</div>
 				</div>
 				<HandleImages {dataFrame} {filesList} {loading} />
-				{#each Object.keys(dataFrame.data.specs_list) as specs}
-					{#if dataFrame.data.specs_list[specs]}
+				{#each Object.keys(dataFrame.data.specs_list) as specs, parent_index}
+					{#if dataFrame.data.specs_list[specs] && Array.isArray(dataFrame.data.specs_list[specs])}
 						<div class="add-spec-item">
 							<input
 								class="spec-item-title"
@@ -502,18 +505,31 @@
 											name="{specs}___{item_index}_x_{key}"
 											value={spec[key]}
 											id="s{key.replaceAll(' ', '')}-spec"
+											on:change={addToDataframe}
 										/>
-										<button
-											class="add-to-header"
-											type="button"
-											title="add '{key}' value to headers list"
-											on:click={() => addToHeader(spec[key])}
-										>
-											<Icon src={Plus} />
-										</button>
 									</div>
 								{/each}
 							{/each}
+						</div>
+					{:else}
+						<div class="flex-yxz spec-items" id="{specs.replaceAll(' ', '---')}-super">
+							<div class="a03x c-88323">
+								<button
+									class="add-to-header remove-spec"
+									type="button"
+									title="Remove '{specs}'"
+									on:click={() => removeFromSpecs(specs)}
+								>
+									<Icon src={Minus} />
+								</button>
+								<label for="s_{parent_index}">{specs}</label>
+								<input
+									type="text"
+									name={specs}
+									value={dataFrame.data.specs_list[specs]}
+									id="s_{parent_index}"
+								/>
+							</div>
 						</div>
 					{/if}
 				{/each}

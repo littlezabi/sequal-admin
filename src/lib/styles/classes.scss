@@ -106,7 +106,8 @@ header{
 	}
 }
 .bg-danger {
-	background: rgb(var(--color-danger)) !important;
+	border-color: rgb(var(--color-danger)) !important;
+	color: rgb(var(--color-danger)) !important;
 }
 .bg-success {
 	background: rgb(var(--color-success)) !important;

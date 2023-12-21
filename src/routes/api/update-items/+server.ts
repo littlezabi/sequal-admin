@@ -1,4 +1,5 @@
 import { authenticateAdmin } from '$lib/users';
+import { setCatType } from '../set-items/set-items';
 import { handleCategories, handleDeviceUpdate, handleProduct, handleUpdateUser, updateSettings } from './handlers';
 export const POST = async ({ request, cookies }: any) => {
 	let authenticated = await authenticateAdmin(cookies.get('admin'));
@@ -18,7 +19,7 @@ export const POST = async ({ request, cookies }: any) => {
 	else if (requestingFor === 'updateCategories') return handleCategories(await request.formData());
 	else if (requestingFor === 'updateSettings') return updateSettings(await request.json());
 	else if (requestingFor === 'product-edit')  return handleProduct(await request.formData(), 'edit')
-	
+	else if (requestingFor === 'setCatType') return setCatType(await request.formData(), 'edit');
 	else {
 		return new Response(
 			JSON.stringify({ message: 'API working but request data not found!', status: 0 }),

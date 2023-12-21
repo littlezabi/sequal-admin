@@ -9,7 +9,8 @@ import {
 	Products,
 	reviewsModel,
 	smartModel,
-	Settings
+	Settings,
+	CategoryTypes
 } from '$lib/models';
 import { generateJWT } from '$lib/users';
 import bcrypt from 'bcryptjs';
@@ -22,6 +23,12 @@ export const getCats = async (merge:boolean = false, type:boolean|string = '', o
 	return new Response(JSON.stringify({ cats, types:types[0] }), { status: 200 });
 }
 
+export const checkCatType = async (t:string) => {
+	return new Response(JSON.stringify({exist: await CategoryTypes.count({title: t}) ? true : false}), {status: 200});
+}
+export const getCatTypes = async () => {
+	return await CategoryTypes.find({}, {description: 1, categories: 1, title: 1}).sort('-_id').lean()
+}
 export const dataCount = async () => {
 	const counter = {
 		mobiles: await smartModel.count(),

@@ -1,15 +1,46 @@
-import { PUBLIC_IMAGES_STATIC_PATH } from "$env/static/public";
-import { getRandomChar } from "$lib/globals";
-import { Admin, Users } from "$lib/models";
-import {writeFileSync} from 'fs'
-import {join} from 'path'
-import bcrypt from 'bcryptjs'
-import sharp from 'sharp'
+import { PUBLIC_IMAGES_STATIC_PATH } from '$env/static/public';
+import { getRandomChar } from '$lib/globals';
+import { Admin, CategoryTypes, Users } from '$lib/models';
+import { writeFileSync } from 'fs';
+import { join } from 'path';
+import bcrypt from 'bcryptjs';
+import sharp from 'sharp';
+import mongoose from 'mongoose';
 
 // export const createNewDevice
+export const setCatType = async (formData: any, action = 'new') => {
+	const form = Object.fromEntries(formData);
+	if (form.setCatType === '')
+		return new Response(JSON.stringify({ response: 'Empty' }), { status: 403 });
+	if ((await CategoryTypes.count({ title: form.setCatType })) > 0) {
+		await CategoryTypes.updateOne({_id: new mongoose.Types.ObjectId(form._id)}, {description: form.setCatDesc})
+		return new Response(JSON.stringify({ response: 'Exist' }), { status: 200 });
+	}
+	let res = {};
+	if(action === 'edit'){
+		console.log('fomr: ', form)
+		let ncat = await CategoryTypes.updateOne({_id: new mongoose.Types.ObjectId(form._id)}, {title: form.setCatType, description: form.setCatDesc})
+		console.log('pdated: ', ncat)
+		res = {
+			response: 'success',
+		}
+	}
+	if (action === 'new') {
+		let ncat = new CategoryTypes({ title: form.setCatType, description: form.setCatDesc });
+		res = {
+			response: 'success',
+			description: ncat.description,
+			title: ncat.title,
+			categories: ncat.categories,
+			_id: ncat._id
+		};
+		ncat.save();
+	}
+	return new Response(JSON.stringify(res), { status: 200 });
+};
 
-export const handleUser = async (formData:any) => {
-    const form = Object.fromEntries(formData);
+export const handleUser = async (formData: any) => {
+	const form = Object.fromEntries(formData);
 	let modal = undefined;
 	const userType = form.userType;
 	if (form.password !== form.re_password)

@@ -62,7 +62,7 @@
 						<Icon class="alert" src={ExclamationTriangle} />
 					{/if}
 				</div>
-				<button on:click={() => updateMessages()}>
+				<button on:click={() => updateMessages(null)}>
 					<Icon src={XMark} />
 				</button>
 			</div>
@@ -149,7 +149,7 @@
 			display: flex;
 			align-items: center;
 			overflow: scroll;
-			height: 80%;
+			height: max-content;
 			backdrop-filter: blur(18px);
 			box-shadow: var(--common-shadow);
 			border: 1px solid rgb(112 112 112 / 12%);

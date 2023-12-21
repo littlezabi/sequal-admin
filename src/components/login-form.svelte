@@ -48,7 +48,7 @@
 				</p>
 				<div class="flex-yxz">
 					<div class="a03x full-w">
-						<label for="username">Enter your username or password</label>
+						<label for="username">Enter your username or email address</label>
 						<input
 							type="text"
 							id="username"

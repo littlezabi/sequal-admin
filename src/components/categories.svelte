@@ -4,13 +4,14 @@
 	import { modal, modalUpdate, static_data, updateMessages, updateStaticData } from '$lib/store';
 	import { PUBLIC_IMAGES_FETCH_URI } from '$env/static/public';
 	import Loading from './loading.svelte';
-	import { fade, slide } from 'svelte/transition';
+	import { fade } from 'svelte/transition';
 	import CustomNumberInput from './custom-number-input.svelte';
 	import CatsType from './cats-type.svelte';
+	import { onMount } from 'svelte';
 	let message: any = false;
 	$: message, updateMessages(message);
 	let item = $modal.item;
-	let dataframe: any = { ...item, old_image: item.image, old_category_name: item.category};
+	let dataframe: any = { ...item, old_image: item.image, old_category_name: item.category };
 	let cat_logo: any = '';
 	let items: number = item.items;
 	let loading = false;
@@ -19,15 +20,15 @@
 	const handleClose = async () => {
 		document.querySelector('body')?.classList.remove('modal-open');
 		const ref = $modal.no_refresh;
-		modalUpdate({ visible: false }); 
-		if(ref) return 1
+		modalUpdate({ visible: false });
+		if (ref) return 1;
 		if (changesHappened) location.href = `/categories`;
 	};
 	const handleForm = async () => {
 		loading = true;
 		dataframe.items = items;
 		let df = dataframe;
-		console.log(df)
+		console.log(df);
 		if (df.category === '') {
 			message = { message: 'Please enter category name!', variant: 'danger' };
 			return 0;
@@ -49,7 +50,9 @@
 		delete df.old_image;
 		form.append('df', JSON.stringify(df));
 		axios
-			.post(`/api/${$modal.action === 'edit' ? 'update-items' : 'set-items'}`, form, { headers: { requestFor: $modal.action === 'edit' ? 'updateCategories' : 'newCategory' } })
+			.post(`/api/${$modal.action === 'edit' ? 'update-items' : 'set-items'}`, form, {
+				headers: { requestFor: $modal.action === 'edit' ? 'updateCategories' : 'newCategory' }
+			})
 			.then((res) => {
 				changesHappened = true;
 				loading = false;
@@ -73,14 +76,15 @@
 			reader.readAsDataURL(image);
 		});
 	};
-	let typeToggled = false;
-	const handleTypesToggler = (e: Event) => {
-		typeToggled = !typeToggled;
-		let svg = document.querySelector('.arrow-expand') as HTMLElement | null;
-		if (typeToggled && svg) svg.style.transform = 'rotate(180deg)';
-		else if (svg) svg.style.transform = 'rotate(0deg)';
-	};
-	let type_list = $static_data.settings.categoryTypes;
+	let type_list:any = []; 
+	onMount(async () => {
+		await axios
+			.get('/api/get-items', { params: { getCatTypes: 1 } })
+			.then((e) => {
+				type_list = e.data;
+			})
+			.catch((e) => console.error(e));
+	});
 	const updateCats = async (categories: any) => {
 		type_list = categories;
 		changesHappened = true;
@@ -137,29 +141,16 @@
 							{#if $modal.action === 'new'}
 								<option disabled selected value="un-selected">Select category type</option>{/if}
 							{#each type_list as cat}
-								{#if item.type === cat}
-									<option selected value={cat}>{cat}</option>
+								{#if item.title === cat}
+									<option selected value={cat._id}>{cat.title}</option>
 								{:else}
-									<option value={cat}>{cat}</option>
+									<option value={cat._id}>{cat.title}</option>
 								{/if}
 							{/each}
 						</select>
 					</div>
 				</div>
-
-				<div class="flex-yxz types-category">
-					<div style="width: 100%">
-						<button class="expand-tree" type="button" on:click={handleTypesToggler}>
-							<p>List of categories types</p>
-							<Icon src={ArrowDownCircle} class="arrow-expand" style="margin-left: 10px;" />
-						</button>
-						{#if typeToggled}
-							<div transition:slide>
-								<CatsType categories={type_list} {updateCats} />
-							</div>
-						{/if}
-					</div>
-				</div>
+				<CatsType types_list={type_list} on:updateCats={(event) => type_list = event.detail} />
 				<div class="flex-yxz">
 					<div class="a03x full-w image-input">
 						<label for="phone-image">CATEGORY LOGO</label>
@@ -198,7 +189,14 @@
 				</div>
 				<div class="flex-yxz number-sec">
 					<div class="a03x">
-						<CustomNumberInput bind:output={items} value={items} title={'Number of Items'} />
+						<CustomNumberInput
+							value={items}
+							title={'Number of items'}
+							callback={(n) => {
+								items = n;
+								return n;
+							}}
+						/>
 					</div>
 				</div>
 				{#if loading}
@@ -216,26 +214,3 @@
 		</div>
 	</div>
 </div>
-
-<style lang="scss">
-	.expand-tree {
-		width: max-content;
-		display: flex;
-		align-items: center;
-		background: none;
-		border: 0;
-		padding: 4px 1px;
-		& p {
-			font-size: 16px;
-			color: white;
-			padding: 0;
-			margin: 0;
-		}
-	}
-	.types-category {
-		margin: 21px 0px;
-		background: #8989ff1c;
-		padding: 21px;
-		border-radius: 8px;
-	}
-</style>
