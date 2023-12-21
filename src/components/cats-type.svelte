@@ -5,21 +5,20 @@
 	import axios from 'axios';
 	import { slide } from 'svelte/transition';
 	import { onMount } from 'svelte';
-	import {createEventDispatcher} from 'svelte'
+	import { createEventDispatcher } from 'svelte';
 
 	let loading = false;
-	let newCat = '';
 	let message: any = false;
 	let catTypes: any = [];
 	let checking: any = undefined;
-	export let types_list:any = [];
+	export let types_list: any = [];
 	const dispatch = createEventDispatcher();
 	const updateCatTypes = () => {
-		dispatch('updateCats', catTypes)
-	}
+		dispatch('updateCats', catTypes);
+	};
 	onMount(async () => {
 		if (types_list.length > 0) {
-			catTypes = types_list
+			catTypes = types_list;
 		} else {
 			await axios
 				.get('/api/get-items', { params: { getCatTypes: 1 } })
@@ -64,7 +63,7 @@
 					{ type: 'button', title: 'CLOSE', callback: () => promptModalUpdate({ visible: false }) }
 				],
 				onSubmit: async (e: any) => {
-					let t = e.target['type-name'].value;
+					let t = e.target['type-name'].value.toLowerCase();
 					let d = e.target['type-desc'].value;
 					handleAdd(t, d, _id);
 					promptModalUpdate({ visible: false });
@@ -107,6 +106,8 @@
 										variant: 'success'
 									});
 									promptModalUpdate({ visible: false });
+									catTypes = catTypes.filter( (e:any) => e._id != _id)
+									updateCatTypes()
 								}
 							})
 							.catch((res) => console.log(res));
@@ -122,10 +123,9 @@
 		message = false;
 		const element = (e.target as HTMLInputElement).value.trim();
 		if (checking) clearTimeout(checking);
-		newCat = element.toLowerCase();
 		checking = setTimeout(async () => {
 			await axios
-				.get('/api/get-items', { params: { checkCatTypeExistence: 1, type: element } })
+				.get('/api/get-items', { params: { checkCatTypeExistence: 1, type: element.toLowerCase() } })
 				.then((e) => {
 					if (e.data.exist) {
 						message = { message: 'Already exist please try another title', variant: 'alert' };
@@ -141,7 +141,6 @@
 	let catTypeValue = '';
 	let catTypeDesc = '';
 	const handleAdd = async (title: string, desc: string, _id: string | boolean = false) => {
-		console.log('');
 		message = false;
 		if (_id === false && titleExist) {
 			if (_id)
@@ -157,7 +156,7 @@
 			return;
 		}
 		let form = new FormData();
-		form.append('setCatType', title);
+		form.append('setCatType', title.toLowerCase());
 		form.append('setCatDesc', desc);
 		//@ts-ignore;
 		if (_id) form.append('_id', _id);
@@ -179,7 +178,9 @@
 							} else return e;
 						});
 					}
-					updateCatTypes()
+					updateCatTypes();
+					catTypeDesc = '';
+					catTypeValue = ''
 				} else if (res.data.response === 'Exist') {
 					if (_id)
 						updateMessages({
@@ -203,7 +204,7 @@
 	const handleTypesToggler = (e: Event) => {
 		typeToggled = !typeToggled;
 		let svg = document.querySelector('.expand-tree svg') as HTMLElement | null;
-		if (typeToggled && svg) svg.style.transform = 'rotate(90deg)';
+		if (typeToggled && svg) svg.style.transform = 'rotate(180deg)';
 		else if (svg) svg.style.transform = 'rotate(0deg)';
 	};
 </script>
@@ -269,41 +270,43 @@
 						Edit, delete and add more types of categories. sub categories come under this category
 						types
 					</p>
-					<table>
-						<thead>
-							<tr>
-								<th>#</th>
-								<th>Type</th>
-								<th>Categories</th>
-								<th>Action</th>
-							</tr>
-						</thead>
-						<tbody>
-							{#each catTypes as cat, i}
+					<div class="ut23">
+						<table>
+							<thead>
 								<tr>
-									<td>{i + 1}</td>
-									<td>{cat.title}</td>
-									<td>{cat.categories}</td>
-									<td>
-										<button
-											class="btn btn-small"
-											on:click={() => handleDelete(cat._id, cat.title, cat.categories)}
-											type="button"
-										>
-											<Icon src={Trash} />
-										</button>
-										<button
-											class="btn btn-small"
-											type="button"
-											on:click={() => handleEdit(cat._id)}
-										>
-											<Icon src={Cog6Tooth} />
-										</button>
-									</td>
+									<th>#</th>
+									<th>Type</th>
+									<th>Categories</th>
+									<th>Action</th>
 								</tr>
-							{/each}
-						</tbody>
-					</table>
+							</thead>
+							<tbody>
+								{#each catTypes as cat, i}
+									<tr>
+										<td>{i + 1}</td>
+										<td>{cat.title}</td>
+										<td>{cat.categories}</td>
+										<td>
+											<button
+												class="btn btn-small"
+												on:click={() => handleDelete(cat._id, cat.title, cat.categories)}
+												type="button"
+											>
+												<Icon src={Trash} />
+											</button>
+											<button
+												class="btn btn-small"
+												type="button"
+												on:click={() => handleEdit(cat._id)}
+											>
+												<Icon src={Cog6Tooth} />
+											</button>
+										</td>
+									</tr>
+								{/each}
+							</tbody>
+						</table>
+					</div>
 				</div>
 			</div>
 		{/if}
@@ -317,15 +320,19 @@
 			font-size: 12px;
 		}
 	}
-
 	.btn-small {
 		margin-top: 0;
 		margin-bottom: 0;
 		width: 60px !important;
 	}
 	.table-view {
+		& .ut23 {
+			max-height: 600px;
+			overflow-y: scroll;
+		}
 		& table {
 			width: 100%;
+
 			& tr {
 				text-align: left;
 				background: #4343434d;

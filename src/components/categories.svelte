@@ -1,13 +1,16 @@
 <script lang="ts">
 	import axios from 'axios';
-	import { ArrowDownCircle, Icon, Photo, XMark } from 'svelte-hero-icons';
+	import { Icon, Photo, XMark } from 'svelte-hero-icons';
 	import { modal, modalUpdate, static_data, updateMessages, updateStaticData } from '$lib/store';
+	import { createEventDispatcher } from 'svelte';
+	import { onMount } from 'svelte';
 	import { PUBLIC_IMAGES_FETCH_URI } from '$env/static/public';
 	import Loading from './loading.svelte';
 	import { fade } from 'svelte/transition';
 	import CustomNumberInput from './custom-number-input.svelte';
 	import CatsType from './cats-type.svelte';
-	import { onMount } from 'svelte';
+
+	export let type_list: any = [];
 	let message: any = false;
 	$: message, updateMessages(message);
 	let item = $modal.item;
@@ -28,7 +31,6 @@
 		loading = true;
 		dataframe.items = items;
 		let df = dataframe;
-		console.log(df);
 		if (df.category === '') {
 			message = { message: 'Please enter category name!', variant: 'danger' };
 			return 0;
@@ -76,14 +78,17 @@
 			reader.readAsDataURL(image);
 		});
 	};
-	let type_list:any = []; 
+
 	onMount(async () => {
-		await axios
-			.get('/api/get-items', { params: { getCatTypes: 1 } })
-			.then((e) => {
-				type_list = e.data;
-			})
-			.catch((e) => console.error(e));
+		if (!type_list.length) {
+			await axios
+				.get('/api/get-items', { params: { getCatTypes: 1 } })
+				.then((e) => {
+					type_list = e.data;
+					dispatch('newCatList', type_list);
+				})
+				.catch((e) => console.error(e));
+		}
 	});
 	const updateCats = async (categories: any) => {
 		type_list = categories;
@@ -107,6 +112,11 @@
 	const handleInputs = (e: Event) => {
 		let v = e.target as HTMLInputElement;
 		dataframe[v.name] = v.value;
+	};
+	const dispatch = createEventDispatcher();
+	const updateCatDispatcherListener = (event: any) => {
+		type_list = event.detail;
+		dispatch('newCatList', type_list);
 	};
 </script>
 
@@ -141,7 +151,7 @@
 							{#if $modal.action === 'new'}
 								<option disabled selected value="un-selected">Select category type</option>{/if}
 							{#each type_list as cat}
-								{#if item.title === cat}
+								{#if item.type_id === cat._id}
 									<option selected value={cat._id}>{cat.title}</option>
 								{:else}
 									<option value={cat._id}>{cat.title}</option>
@@ -150,7 +160,7 @@
 						</select>
 					</div>
 				</div>
-				<CatsType types_list={type_list} on:updateCats={(event) => type_list = event.detail} />
+				<CatsType types_list={type_list} on:updateCats={updateCatDispatcherListener} />
 				<div class="flex-yxz">
 					<div class="a03x full-w image-input">
 						<label for="phone-image">CATEGORY LOGO</label>

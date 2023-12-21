@@ -1,7 +1,14 @@
 import database from './database';
-import { Admin, Products, Settings, Users, Categories, smartModel, CategoryTypes } from '$lib/models';
+import {
+	Admin,
+	Products,
+	Settings,
+	Users,
+	Categories,
+	smartModel,
+	CategoryTypes
+} from '$lib/models';
 import mongoose from 'mongoose';
-import { parse } from './globals';
 
 await database.connect();
 const projectSmart = {
@@ -13,7 +20,7 @@ const projectSmart = {
 	isActive: 1
 };
 
-export const getCategories  = async (
+export const getCategories = async (
 	startIndex: number,
 	limit: number,
 	ctype: string,
@@ -32,10 +39,24 @@ export const getCategories  = async (
 		match = match ? { $and: [{ category }, { ...match }] } : { category };
 	}
 	if (ctype) {
-		match = match ? { $and: [{ 'type': ctype }, { ...match }] } : { 'type': ctype };
+		match = match ? { $and: [{ type: ctype }, { ...match }] } : { type: ctype };
 	}
 	let pipleline: any = [
 		{ $match: match ? match : {} },
+		{
+			$lookup: {
+				from: 'category_types',
+				localField: 'type',
+				foreignField: '_id',
+				as: 'type'
+			}
+		},
+		{
+			$unwind: {
+				path: '$type',
+				preserveNullAndEmptyArrays: true
+			}
+		},
 		{
 			$facet: {
 				count: [{ $count: 'total' }],
@@ -43,6 +64,15 @@ export const getCategories  = async (
 					{ $skip: startIndex },
 					{ $limit: limit },
 					{ $sort: { [sort[0]]: sort[1] } },
+					{
+						$project: {
+							category: 1,
+							items: 1,
+							image: 1,
+							'type.title': 1,
+							'type._id': 1
+						}
+					}
 				]
 			}
 		}
@@ -53,8 +83,11 @@ export const getCategories  = async (
 		categories: list[0].results.map((e: any, i: number) => {
 			let x = {
 				...e,
+				type_id: e.type._id,
+				type_title: e.type.title,
 				index: ++i + startIndex
 			};
+			delete x.type;
 			return x;
 		})
 	};
@@ -195,10 +228,10 @@ export const mobileList = async (startIndex: number, limit: number) => {
 	});
 };
 
-export const getSettings = async (): Promise<object[]> =>{
+export const getSettings = async (): Promise<object[]> => {
 	const catTypes = await CategoryTypes.find().sort('-_id');
 	return await Settings.findOne({}, { cookiesOptions: 0, oneTimeAdminLoginKey: 0, updatedAt: 0 });
-}
+};
 
 export const getUsers = async (
 	startIndex: number = 0,

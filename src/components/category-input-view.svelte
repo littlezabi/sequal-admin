@@ -1,9 +1,8 @@
 <script lang="ts">
-	import { modal, modalUpdate, static_data, updateStaticData } from '$lib/store';
+	import { modalUpdate, static_data, updateStaticData } from '$lib/store';
 	import axios from 'axios';
 	import { onMount } from 'svelte';
 	import { ArrowPath, Icon } from 'svelte-hero-icons';
-	import Categories from './categories.svelte';
 	let cat_loading = false;
 	let cats: any = [];
 	let types: any = $static_data.settings.categoryTypes ?? [];
@@ -55,9 +54,6 @@
 	});
 </script>
 
-{#if $modal.visible}
-	<Categories />
-{/if}
 <div class="flex-yxz">
 	<div class="a03x">
 		<label for="category">

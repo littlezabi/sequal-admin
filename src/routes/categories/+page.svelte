@@ -1,7 +1,7 @@
 <script lang="ts">
 	import Categories from '$compo/categories.svelte';
 	import { PUBLIC_IMAGES_FETCH_URI } from '$env/static/public';
-	import { getRandomColor  } from '$lib/globals';
+	import { getRandomColor } from '$lib/globals';
 	import { modal, modalUpdate, promptModalUpdate, updateMessages } from '$lib/store';
 	import axios from 'axios';
 	import type { PageData } from './$types';
@@ -21,9 +21,9 @@
 	import { fade } from 'svelte/transition';
 	import ListHeadFilters from '$compo/list-head-filters.svelte';
 	import { onMount } from 'svelte';
-	//import { goto } from '$app/navigation';
-	export let data: PageData;
-	let selectedItems:any = [];
+	import Pagination from '$compo/pagination.svelte';
+	export let data: PageData
+	let selectedItems: any = [];
 	let prev_cat: any = {};
 	let query: any = {};
 	const handleFiltersAndTypes = (e: any, type: string) => {
@@ -38,7 +38,7 @@
 		});
 		if (final.at(-1) === '&') final = final.substring(0, final.length - 1);
 		//await goto(`categories/?${final}`);
-		window.location.href = `categories/?${final}`
+		window.location.href = `categories/?${final}`;
 	};
 	const sort = (by: any): any => {
 		let order = by.target.value.split('_').at(-1);
@@ -66,12 +66,13 @@
 	};
 	let categories = JSON.parse(data.categories);
 	let list = categories;
+	$:data.categories, categories = JSON.parse(data.categories), list = categories;
+
 	const handleEdit = (item: any) => {
-		modalUpdate({ visible: true, item: item, title: item.category, action: 'edit' });
+		modalUpdate({ visible: true, item, title: item.category, action: 'edit' });
 	};
 	const handleDelete = (item: any) => {
 		promptModalUpdate({
-
 			visible: true,
 			title: `CONFIRM DELETE`,
 			description: `Are you sure you want to delete the category '${item.category}'? Please proceed with caution, as this action is irreversible and cannot be undone.`,
@@ -115,12 +116,11 @@
 				if (e.target.checked) {
 					selectedItems = [...selectedItems, id];
 				} else {
-					selectedItems = selectedItems.filter((e:any) => e !== id);
+					selectedItems = selectedItems.filter((e: any) => e !== id);
 				}
 				if (selectedItems.length > 0) selectAllCheck.indeterminate = true;
 				else selectAllCheck.indeterminate = false;
 			});
-			// selectedItems = selectedItems
 		});
 		selectAllCheck.addEventListener('change', (e: any) => {
 			selectedItems = [];
@@ -136,10 +136,12 @@
 			});
 		});
 	});
+	$:$modal.visible, console.log($modal.visible)
+	let type_list:any = []
 </script>
 
 {#if $modal.visible}
-	<Categories />
+	<Categories {type_list} on:newCatList={(event) => type_list = event.detail} />
 {/if}
 
 <div transition:fade>
@@ -242,7 +244,7 @@
 								{/if}
 							</td>
 							<td style="text-transform:uppercase;text-align:left;">{item.category}</td>
-							<td style="text-transform: capitalize">{item.type}</td>
+							<td style="text-transform:capitalize">{item.type_title}</td>
 							<td>{item.items}</td>
 							<td>
 								<button title="Edit" on:click={() => handleEdit(item)}>
@@ -257,8 +259,7 @@
 				</tbody>
 				<tfoot>
 					<tr class="item-head item-section" style={`background: ${getRandomColor(0.1)}`}>
-						<th>
-						</th>
+						<th />
 						<th>
 							<div>
 								<Icon src={ListBullet} />
@@ -299,6 +300,7 @@
 				</tfoot>
 			</table>
 		</div>
+		<Pagination renderFor={`/categories/`} counter_model={`categories`} pageNo={data.pageNo} />
 	</div>
 </div>
 

@@ -1,6 +1,6 @@
 import { PUBLIC_IMAGES_STATIC_PATH, PUBLIC_PHONE_IMAGE_FOLDER } from '$env/static/public';
 import { getRandomChar } from '$lib/globals';
-import { Admin, Settings, Categories, Products, smartModel } from '$lib/models';
+import { Admin, Settings, Categories, Products, smartModel, CategoryTypes } from '$lib/models';
 import { writeFileSync, unlink } from 'fs';
 import { join } from 'path';
 import sharp from 'sharp';
@@ -219,6 +219,7 @@ export const handleCategories = async (formData: any, action = 'edit') => {
 			}
 		}
 		if (action === 'edit') delete dataframe.old_image;
+		dataframe.type = new mongoose.Types.ObjectId(dataframe.type)
 		delete dataframe.old_category_name;
 		delete dataframe.old_category_type;
 
@@ -233,6 +234,7 @@ export const handleCategories = async (formData: any, action = 'edit') => {
 		} else {
 			const c = new Categories(dataframe);
 			await c.save();
+			await CategoryTypes.updateOne({_id: dataframe.type}, {$inc: {categories: 1}})
 			return new Response(
 				JSON.stringify({
 					message: `Successfully created!`,
