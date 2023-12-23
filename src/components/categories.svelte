@@ -14,7 +14,7 @@
 	let message: any = false;
 	$: message, updateMessages(message);
 	let item = $modal.item;
-	let dataframe: any = { ...item, old_image: item.image, old_category_name: item.category };
+	let dataframe: any = { ...item, old_type: item.type_id, old_image: item.image, old_category_name: item.category };
 	let cat_logo: any = '';
 	let items: number = item.items;
 	let loading = false;
@@ -30,6 +30,8 @@
 	const handleForm = async () => {
 		loading = true;
 		dataframe.items = items;
+		delete dataframe.type_id;
+		delete dataframe.type_title;
 		let df = dataframe;
 		if (df.category === '') {
 			message = { message: 'Please enter category name!', variant: 'danger' };
@@ -58,7 +60,9 @@
 			.then((res) => {
 				changesHappened = true;
 				loading = false;
-				if (res.data?.success) message = { message: res.data.message, variant: 'success' };
+				if (res.data?.success)
+					 message = { message: res.data.message, variant: 'success' };
+				
 				else message = { message: `Error ${res.data.message}`, variant: 'danger' };
 			})
 			.catch((e) => {

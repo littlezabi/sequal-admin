@@ -9,26 +9,63 @@ import {
 	Products,
 	reviewsModel,
 	smartModel,
-	Settings,
 	CategoryTypes
 } from '$lib/models';
 import { generateJWT } from '$lib/users';
 import bcrypt from 'bcryptjs';
+import mongoose from 'mongoose';
+const reGenObjFromURLParams = (searchParams: any) => {
+	let reconstructedObject = {};
+	for (let [key, value] of searchParams.entries()) {
+		let keys = key.split('[').map((k: any) => k.replace(']', ''));
+		let currentObject: any = reconstructedObject;
+		for (let i = 0; i < keys.length; i++) {
+			let currentKey = keys[i];
+			if (!currentObject[currentKey]) {
+				currentObject[currentKey] = {};
+			}
+			if (i === keys.length - 1) {
+				currentObject[currentKey] =
+					value === '1' || value === '0'
+						? Number(value)
+						: value === 'true' || value === 'false'
+						? JSON.parse(value)
+						: value;
+			} else {
+				currentObject = currentObject[currentKey];
+			}
+		}
+	}
+	return reconstructedObject;
+};
+export const getCatsAndTypes = async (params: any) => {
+	let res: any = {};
+	params = reGenObjFromURLParams(params);
+	if (params.getCats) {
+		if (typeof params.getTypes === 'string') {
+			res.cats = await Categories.find({ type: new mongoose.Types.ObjectId(params.getTypes) });
+		}
+	}
+	if (params.getTypes === true) {
+		res.types = await CategoryTypes.find(
+			{},
+			params.options.getTypesFieldOnly ? params.options.getTypesFieldOnly : {}
+		);
+	}
+	return new Response(JSON.stringify(res), { status: 200 });
+};
 
-export const getCats = async (merge:boolean = false, type:boolean|string = '', only_fields={}, getTypes = false)=>{
-	let cats = await Categories.find(type ? {type} : {}, only_fields).lean();
-	let types = [{categoryTypes:[]}]
-	if(getTypes) types = await Settings.find({},{categoryTypes:1,_id:0}).lean();
-	if(merge) return cats
-	return new Response(JSON.stringify({ cats, types:types[0] }), { status: 200 });
-}
-
-export const checkCatType = async (t:string) => {
-	return new Response(JSON.stringify({exist: await CategoryTypes.count({title: t}) ? true : false}), {status: 200});
-}
+export const checkCatType = async (t: string) => {
+	return new Response(
+		JSON.stringify({ exist: (await CategoryTypes.count({ title: t })) ? true : false }),
+		{ status: 200 }
+	);
+};
 export const getCatTypes = async () => {
-	return await CategoryTypes.find({}, {description: 1, categories: 1, title: 1}).sort('-_id').lean()
-}
+	return await CategoryTypes.find({}, { description: 1, categories: 1, title: 1 })
+		.sort('-_id')
+		.lean();
+};
 export const dataCount = async () => {
 	const counter = {
 		mobiles: await smartModel.count(),

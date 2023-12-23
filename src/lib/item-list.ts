@@ -229,7 +229,6 @@ export const mobileList = async (startIndex: number, limit: number) => {
 };
 
 export const getSettings = async (): Promise<object[]> => {
-	const catTypes = await CategoryTypes.find().sort('-_id');
 	return await Settings.findOne({}, { cookiesOptions: 0, oneTimeAdminLoginKey: 0, updatedAt: 0 });
 };
 

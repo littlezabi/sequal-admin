@@ -1,6 +1,24 @@
-import { PUBLIC_ENV } from '$env/static/public';
+//import { PUBLIC_ENV } from '$env/static/public';
+const PUBLIC_ENV = 'dev';
+import axios from 'axios';
 import { bg40Colors, border40Colors } from './constant';
-
+export const getCatsAndTypes: (
+	getCats?: boolean,
+	getTypes?: boolean | string,
+	options?: { getCatsFieldOnly?: any; getTypesFieldOnly?: any }
+) => Promise<{message: string, status: number, cats?: any, types?: any}>= async (getCats = true, getTypes = true, options = {}) => {
+	return await axios
+		.get('/api/get-items', {
+			params: {
+				getCatsAndTypes: 1,
+				getCats,
+				getTypes,
+				options
+			}
+		})
+		.then((res) => ({ message: 'success', status: res.status, ...res.data }))
+		.catch((e) => ({ message: e, status: e.status }));
+};
 export const parse = (json: {} | []) => {
 	if (json) return JSON.parse(JSON.stringify(json));
 	else return json;
@@ -37,9 +55,9 @@ export const getPagination = (cookies: any, url: any) => {
 	let page = Number(url.searchParams.get('p')) ?? 0;
 	let limit = Number(cookies.get('item-per-page') ?? 20);
 	let skip = Number(cookies.get('item-per-page') ?? 20);
-	page = page ? page : 0
-	limit = limit ? limit : 20
-	skip = !skip ? 20 : skip
+	page = page ? page : 0;
+	limit = limit ? limit : 20;
+	skip = !skip ? 20 : skip;
 	page = page ? page - 1 : page;
 	skip = page * skip;
 	return { skip, limit, page };

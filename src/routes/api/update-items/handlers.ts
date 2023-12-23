@@ -6,7 +6,7 @@ import { join } from 'path';
 import sharp from 'sharp';
 import { Users } from 'svelte-hero-icons';
 import bcrypt from 'bcryptjs';
-import mongoose from 'mongoose';
+import mongoose, { mongo } from 'mongoose';
 import getResponse from '../responses';
 
 export const uploadImages = (images: any): string[] => {
@@ -74,21 +74,22 @@ export const handleProduct = async (formData: any, action = 'edit') => {
 		});
 		dataframe.images = uploadImages(images);
 		if (action === 'edit') {
-			delete dataframe._id
+			delete dataframe._id;
 			if (info.removeImages) deleteImages(info.removeImages);
 			if (info.new_category && info.new_category !== dataframe.category) {
 				await Categories.updateOne({ _id: dataframe.category }, { $inc: { items: -1 } });
 				await Categories.updateOne({ _id: info.new_category }, { $inc: { items: 1 } });
 				dataframe.category = info.new_category;
 			}
-			if(dataframe.category) dataframe.category = new mongoose.Types.ObjectId(dataframe.category);
+			if (dataframe.category) dataframe.category = new mongoose.Types.ObjectId(dataframe.category);
 			const saved = await Products.updateOne(
 				{ _id: info._id },
 				{
-					$set: { ...dataframe},
+					$set: { ...dataframe }
 				}
 			);
-			if (dataframe.asDraft) return getResponse(undefined, 200, 1, { message: `Draft Saved!`, product:dataframe});
+			if (dataframe.asDraft)
+				return getResponse(undefined, 200, 1, { message: `Draft Saved!`, product: dataframe });
 			else if (saved) return new Response(JSON.stringify({ success: 1 }), { status: 200 });
 			else
 				return new Response(JSON.stringify({ message: 'Failed to save!', success: 0 }), {
@@ -96,13 +97,14 @@ export const handleProduct = async (formData: any, action = 'edit') => {
 				});
 		}
 		delete dataframe.removeImages;
-		if(dataframe.category) dataframe.category = new mongoose.Types.ObjectId(dataframe.category);
+		if (dataframe.category) dataframe.category = new mongoose.Types.ObjectId(dataframe.category);
 		try {
 			const modal = new Products(dataframe);
 			const product = await modal.save();
 			if (dataframe.category)
 				await Categories.updateOne({ _id: dataframe.category }, { $inc: { items: 1 } });
-			if (product.asDraft) return getResponse(undefined, 200, 1, { message: `Draft Saved!`, product});
+			if (product.asDraft)
+				return getResponse(undefined, 200, 1, { message: `Draft Saved!`, product });
 			return getResponse(3, 200, 1);
 		} catch (e: any) {
 			return getResponse(undefined, 200, 0, { message: `Error: ${e.message}!` });
@@ -219,11 +221,16 @@ export const handleCategories = async (formData: any, action = 'edit') => {
 			}
 		}
 		if (action === 'edit') delete dataframe.old_image;
-		dataframe.type = new mongoose.Types.ObjectId(dataframe.type)
 		delete dataframe.old_category_name;
-		delete dataframe.old_category_type;
-
 		if (action === 'edit') {
+			console.log('df: ', dataframe);
+			if (dataframe.old_type !== dataframe.type) {
+				dataframe.type = new mongoose.Types.ObjectId(dataframe.type);
+				dataframe.old_type = new mongoose.Types.ObjectId(dataframe.old_type);
+				await CategoryTypes.updateOne({_id: dataframe.old_type}, {$inc: {categories: -1}})
+				await CategoryTypes.updateOne({_id: dataframe.type}, {$inc: {categories: 1}})
+				delete dataframe.old_type;
+			}
 			await Categories.updateOne({ _id }, { $set: dataframe });
 			return new Response(
 				JSON.stringify({
@@ -232,9 +239,10 @@ export const handleCategories = async (formData: any, action = 'edit') => {
 				})
 			);
 		} else {
+			dataframe.type = new mongoose.Types.ObjectId(dataframe.type);
 			const c = new Categories(dataframe);
 			await c.save();
-			await CategoryTypes.updateOne({_id: dataframe.type}, {$inc: {categories: 1}})
+			await CategoryTypes.updateOne({ _id: dataframe.type }, { $inc: { categories: 1 } });
 			return new Response(
 				JSON.stringify({
 					message: `Successfully created!`,

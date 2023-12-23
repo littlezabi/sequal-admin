@@ -1,17 +1,18 @@
 <script lang="ts">
+	import { getCatsAndTypes } from '$lib/globals';
 	import { modalUpdate, static_data, updateStaticData } from '$lib/store';
 	import axios from 'axios';
 	import { onMount } from 'svelte';
 	import { ArrowPath, Icon } from 'svelte-hero-icons';
 	let cat_loading = false;
 	let cats: any = [];
-	let types: any = $static_data.settings.categoryTypes ?? [];
+	let types: any = [];
 	export let callback: (e: string) => void;
 	export let catTypeCB: (e: string) => void = () => {};
 	export let prev_cat: { _id?: string; type?: string } = {};
 	export let asFilter: boolean = false;
 	export let collection: string = '';
-	let categories_list: any = $static_data.categories;
+	let categories_list: any = [];
 	const handleCat = (e: any) => callback(e.target.value);
 	const handlePType = (e: any, type = '') => {
 		let v = e ? (e.target as any).value : type;
@@ -25,27 +26,23 @@
 		}
 		catTypeCB(v);
 	};
-	const getCats = async () => {
-		cat_loading = true;
-		await axios
-			.get('/api/get-items/', { params: { getCats: 1, getTypes: 1 } })
-			.then((e) => {
-				updateStaticData({
-					categories: e.data.cats,
-					settings: { ...$static_data.settings, categoryTypes: e.data.types.categoryTypes }
-				});
-				cat_loading = false;
-				categories_list = e.data.cats;
-				cats = categories_list;
-				types = e.data.types.categoryTypes;
-			})
-			.catch((e) => {
-				cat_loading = false;
-				console.error(e);
-			});
-	};
 	onMount(async () => {
-		if ((types && types.length === 0) || categories_list.length === 0) await getCats();
+		cat_loading = true
+		let items = await getCatsAndTypes(true, true, {
+			getCatsFieldOnly: {
+				_id: 1,
+				type: 1,
+				category: 1
+			},
+			getTypesFieldOnly: {
+				_id: 1,
+				title: 1
+			}
+		});
+		cat_loading = false
+		categories_list = items.cats
+		cats = items.cats
+		types = items.types
 		if (prev_cat.type) handlePType(false, prev_cat.type);
 		if (asFilter) {
 			categories_list = [{ category: 'all', type: 'all', _id: 'all' }, ...categories_list];
@@ -83,12 +80,12 @@
 				{:else}
 					<option selected value="all">ALL</option>
 				{/if}
-				{#if $static_data.settings.categoryTypes}
-					{#each $static_data.settings.categoryTypes as type}
-						{#if prev_cat.type === type}
-							<option selected value={type}>{type}</option>
+				{#if types} 
+					{#each types as type}
+						{#if prev_cat.type === type._id}
+							<option selected value={type._id}>{type.title}</option>
 						{:else}
-							<option value={type}>{type}</option>
+							<option value={type._id}>{type.title}</option>
 						{/if}
 					{/each}
 				{/if}
