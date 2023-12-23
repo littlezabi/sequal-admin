@@ -380,7 +380,7 @@
 	};
 </script>
 
-<div class="product-new" transition:fade>
+<div class="product-new" transition:fade|global>
 	<button class="save-as-draft-icon" on:click={saveAsDraft}>
 		<div>
 			<span>{saving_draft_loading ? 'Saving Draft...' : 'Save Draft'}</span>

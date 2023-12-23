@@ -216,7 +216,7 @@
 			<Icon src={ArrowDownCircle} class="arrow-expand" style="margin-left: 10px;" />
 		</button>
 		{#if typeToggled}
-			<div transition:slide>
+			<div transition:slide|global>
 				<div class="highlight-bg">
 					<div class="a03x full-w">
 						<label for="category-type"

@@ -144,7 +144,7 @@
 	};
 </script>
 
-<div transition:fade>
+<div transition:fade|global>
 	<h2>Products List</h2>
 	<div class="product-list-view">
 		<div class="head">

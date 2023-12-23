@@ -124,7 +124,7 @@
 	};
 </script>
 
-<div class="modal" transition:fade>
+<div class="modal" transition:fade|global>
 	<button on:click={handleClose} type="button" class="close-btn"><Icon src={XMark} /></button>
 	<div class="inner-modal">
 		<div class="form" id="dataframe-form">

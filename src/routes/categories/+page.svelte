@@ -144,7 +144,7 @@
 	<Categories {type_list} on:newCatList={(event) => type_list = event.detail} />
 {/if}
 
-<div transition:fade>
+<div transition:fade|global>
 	<h2>Categories List</h2>
 	<div class="product-list-view">
 		<div class="head">

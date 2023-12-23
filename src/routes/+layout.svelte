@@ -50,7 +50,7 @@
 			<PromptModal />
 		{/if}
 		{#if $messages.message}
-			<div class="g-messages {$messages.variant}" transition:fade>
+			<div class="g-messages {$messages.variant}" transition:fade|global>
 				<div class="flex">
 					<span style="margin-right: 8px;">
 						{$messages.message}

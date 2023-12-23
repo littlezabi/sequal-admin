@@ -217,7 +217,7 @@
 	let passwordToggler = false;
 </script>
 
-<div class="modal" transition:fade>
+<div class="modal" transition:fade|global>
 	<button on:click={handleClose} class="close-btn"><Icon src={XMark} /></button>
 	<div class="inner-modal">
 		<div class="form" id="dataframe-form">
@@ -435,7 +435,7 @@
 						</button>
 					</div>
 					{#if passwordToggler}
-						<div transition:fade>
+						<div transition:fade|global>
 							<div class="flex-yxz">
 								<div class="a03x highlight-bg">
 									<label for="gen-random">GENERATE RANDOM PASSWORD</label>

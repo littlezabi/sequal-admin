@@ -3,7 +3,7 @@
 	import { promptModal, promptModalUpdate } from '$lib/store';
 </script>
 
-<div class="spec-input-modal" transition:fade>
+<div class="spec-input-modal" transition:fade|global>
 	<div class="inner-spec-modal">
 		<div class="form">
 			<h2>{$promptModal.title}</h2>
