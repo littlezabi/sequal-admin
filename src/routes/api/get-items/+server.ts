@@ -14,7 +14,7 @@ export const GET = async ({ url, cookies, request }: any) => {
 	if (url.searchParams.get('count-items')) return dataCount();
 	let authenticated = await authenticateAdmin(cookies.get('admin'));
 	if (!authenticated) {
-		cookies.delete('admin');
+		/* @migration task: add path argument */ cookies.delete('admin');
 		return new Response(
 			JSON.stringify({
 				message: 'Admin Authentication Failed!',

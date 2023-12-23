@@ -10,7 +10,7 @@ export const load: PageServerLoad = async ({ url, cookies, params }: any) => {
 	if (user_type === 'admin' || user_type === 'clients')
 		data[user_type] = await getUsers(skip, limit, user_type);
 	if (!data.clients.length && !data.admin.length)
-		throw error(404, 'Users or Admin data not found!');
+		error(404, 'Users or Admin data not found!');
 	return {
 		clients: data.clients ? JSON.parse(JSON.stringify(data.clients)) : data.clients,
 		admin: JSON.parse(JSON.stringify(data.admin)),

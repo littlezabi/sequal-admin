@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Funnel, Icon, Plus, Trash } from 'svelte-hero-icons';
+	import { Funnel, Icon, Trash } from 'svelte-hero-icons';
 	import CategoryInputView from './category-input-view.svelte';
 	import { promptModalUpdate, updateMessages } from '$lib/store';
 	import { goto } from '$app/navigation';
@@ -11,6 +11,7 @@
 				type?: string | undefined;
 		  }
 		| undefined = undefined;
+	export let filters: any;
 	export let handleFiltersAndTypes: any;
 	export let handleFilteredSearch: any;
 	export let sort: any;
@@ -69,11 +70,15 @@
 		{#if collection != 'categories'}
 			<div class="a03x" style="width:129px;margin-top:7px;">
 				<span>
-					FILTER
+					FILTER BY
 					<select class="sort-select" on:change={(e) => handleFiltersAndTypes(e, 'filter')}>
-						<option value="all">All</option>
-						<option value="asDraft_1">Drafts</option>
-						<option value="asDraft_0">Posted</option>
+						{#each [{ all: 'All' }, { asDraft_1: 'Drafts' }, { asDraft_0: 'Posted' }] as opt}
+							{#if filters.filter && 'asDraft_' + (filters.filter[1] ? '1' : '0') === Object.keys(opt)[0]}
+								<option value={Object.keys(opt)[0]} selected>{Object.values(opt)[0]}</option>
+							{:else}
+								<option value={Object.keys(opt)[0]}>{Object.values(opt)[0]}</option>
+							{/if}
+						{/each}
 					</select>
 				</span>
 			</div>
@@ -82,6 +87,15 @@
 			<span>
 				SORT BY
 				<select class="sort-select" on:change={(e) => handleFiltersAndTypes(e, 'sort')}>
+					{#if filters.sort}
+						<optgroup label="By {filters.sort[0]}">
+							{#if filters.sort[1] === 1}
+								<option value="{filters.sort[0]}_asc" selected>Ascending</option>
+							{:else}
+								<option value="{filters.sort[0]}_desc">Descending</option>
+							{/if}
+						</optgroup>
+					{/if}
 					<optgroup label="By Index">
 						<option value="id_asc">Ascending</option>
 						<option value="id_desc">Descending</option>

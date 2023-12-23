@@ -4,7 +4,7 @@ import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from '../$types';
 
 export const load = (async ({ url, cookies }) => {
-	if (cookies.get('admin')) throw redirect(302, '/');
+	if (cookies.get('admin')) redirect(302, '/');
 	const admin_key = url.searchParams.get('admin');
 	if (admin_key) {
 		if (admin_key?.length > 80)
@@ -15,7 +15,7 @@ export const load = (async ({ url, cookies }) => {
 					secure: !dev,
 					maxAge: 60 * 60 * 6
 				});
-				throw redirect(302, '/users');
+				redirect(302, '/users');
 			}
 	}
 	return { himom: 1 };

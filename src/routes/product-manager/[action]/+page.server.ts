@@ -8,7 +8,7 @@ export const load: PageServerLoad = async ({ params }) => {
 		let _id = params.action;
 		let {product, category} = parse(await getProduct(_id));
         if(product) return { product, category, action: 'edit' };
-        throw error(404, 'Product not found please check your product id');
+        error(404, 'Product not found please check your product id');
 	}
 	return { action: 'new' };
 };

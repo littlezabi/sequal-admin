@@ -165,6 +165,7 @@
 			{handleFilteredSearch}
 			{handleFiltersAndTypes}
 			{sort}
+			filters = {data.filters}
 			collection="product"
 		/>
 		<div class="container">
@@ -248,7 +249,7 @@
 							</td>
 							<td>{item.title}</td>
 							<td class="fs-12 capi"
-								>{item.category ? `${item.category_type} - ${item.category}` : 'NULL'}</td
+								>{item.category ? `${item.category}` : 'NULL'}</td
 							>
 							<td class="fs-12">{life(item.createdAt).from()}</td>
 							<td
@@ -315,9 +316,8 @@
 			</table>
 		</div>
 		<Pagination
-			{filtered_total_items}
+			__count__={data.total}
 			renderFor={`/products/`}
-			counter_model={`products`}
 			pageNo={data.pageNo}
 		/>
 	</div>

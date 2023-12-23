@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { getCatsAndTypes } from '$lib/globals';
-	import { modalUpdate, static_data, updateStaticData } from '$lib/store';
-	import axios from 'axios';
+	import { modalUpdate } from '$lib/store';
 	import { onMount } from 'svelte';
 	import { ArrowPath, Icon } from 'svelte-hero-icons';
 	let cat_loading = false;
@@ -12,6 +11,7 @@
 	export let prev_cat: { _id?: string; type?: string } = {};
 	export let asFilter: boolean = false;
 	export let collection: string = '';
+	export let filters:any = {};
 	let categories_list: any = [];
 	const handleCat = (e: any) => callback(e.target.value);
 	const handlePType = (e: any, type = '') => {
@@ -27,7 +27,7 @@
 		catTypeCB(v);
 	};
 	onMount(async () => {
-		cat_loading = true
+		cat_loading = true;
 		let items = await getCatsAndTypes(true, true, {
 			getCatsFieldOnly: {
 				_id: 1,
@@ -39,22 +39,36 @@
 				title: 1
 			}
 		});
-		cat_loading = false
-		categories_list = items.cats
-		cats = items.cats
-		types = items.types
-		if (prev_cat.type) handlePType(false, prev_cat.type);
+		cat_loading = false;
+		categories_list = items.cats;
+		cats = items.cats;
+		types = items.types;
+		if (prev_cat?.type) handlePType(false, prev_cat?.type);
 		if (asFilter) {
 			categories_list = [{ category: 'all', type: 'all', _id: 'all' }, ...categories_list];
 			cats = categories_list;
 		}
 	});
+	const getCats = async () => {
+		await getCatsAndTypes(true, true, {
+			getCatsFieldOnly: {
+				_id: 1,
+				type: 1,
+				category: 1
+			},
+			getTypesFieldOnly: {
+				_id: 1,
+				title: 1
+			}
+		});
+	};
+	console.log('filters: ', filters)
 </script>
 
 <div class="flex-yxz">
 	<div class="a03x">
 		<label for="category">
-			{!asFilter ? 'CHOOSE PRODUCT TYPE' : 'SELECT TYPE'}
+			{!asFilter ? 'CHOOSE CATEGORY TYPE' : 'SELECT CATEGORY TYPE'}
 			{#if !asFilter}
 				<small
 					>(if product type is not exist here then
@@ -80,9 +94,9 @@
 				{:else}
 					<option selected value="all">ALL</option>
 				{/if}
-				{#if types} 
+				{#if types}
 					{#each types as type}
-						{#if prev_cat.type === type._id}
+						{#if filters.ctype === type._id}
 							<option selected value={type._id}>{type.title}</option>
 						{:else}
 							<option value={type._id}>{type.title}</option>
@@ -114,10 +128,10 @@
 					{#if Array.isArray(cats)}
 						{#if !asFilter}
 							{#each cats as cat}
-								{#if prev_cat._id === cat._id}
-									<option selected value={cat._id}>{cat.type} - {cat.category}</option>
+								{#if prev_cat?._id && prev_cat._id === cat._id}
+									<option selected value={cat._id}>{cat.cat_type.title} - {cat.category}</option>
 								{:else}
-									<option value={cat._id}>{cat.type} - {cat.category}</option>
+									<option value={cat._id}>{cat.cat_type.title} - {cat.category}</option>
 								{/if}
 							{/each}
 						{:else}

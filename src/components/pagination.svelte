@@ -13,34 +13,15 @@
 	const paginateButtonShow = $static_data.settings.paginateButtonShow ?? 6;
 	const itemPerPage = $static_data.settings.itemsPerPage ?? 20;
 	export let pageNo = 0;
-	export let counter_model: string;
 	export let renderFor = '';
-	export let filtered_total_items: number = 0;
-	let loaded: boolean = false;
-	const generatePagi = async () => {
-		if (loaded) {
-			if (!filtered_total_items) {
-				let __count__ = $static_data.counter;
-				if (!__count__) {
-					const res = await fetch(`/api/get-items?count-items=1`)
-						.then((e) => e.json())
-						.catch((e) => e);
-					updateStaticData({ counter: res.counter });
-					__count__ = res.counter;
-					loading = false;
-					calculateStartAndEndPage(res.counter[counter_model]);
-				} else calculateStartAndEndPage(__count__[counter_model]);
-			} else calculateStartAndEndPage(filtered_total_items);
-		}
-	};
+	export let __count__: number;
+	const generatePagi = async () => {};
 	let loading = true;
 	let totalPages = 0;
 	let startPage = 0;
 	let endPage = 0;
-	$: pageNo, generatePagi();
-	onMount(async () => {
-		loaded = true;
-		await generatePagi();
+	onMount(() => {
+		calculateStartAndEndPage(__count__);
 	});
 	function range(start: number, end: number) {
 		return Array.from({ length: end - start + 1 }, (_, i) => start + i);

@@ -7,7 +7,7 @@ export const load: PageServerLoad = async ({ cookies, url }: any) => {
 		const auth = await authenticateAdmin(cookies.get('admin'));
 		if (!auth) {
 			cookies.delete('admin');
-			throw redirect(303, '/login');
+			redirect(303, '/login');
 		}
 	}
 	return {};

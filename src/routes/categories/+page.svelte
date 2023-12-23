@@ -2,7 +2,14 @@
 	import Categories from '$compo/categories.svelte';
 	import { PUBLIC_IMAGES_FETCH_URI } from '$env/static/public';
 	import { getRandomColor } from '$lib/globals';
-	import { modal, modalUpdate, promptModalUpdate, updateMessages } from '$lib/store';
+	import {
+		modal,
+		modalUpdate,
+		promptModalUpdate,
+		static_data,
+		updateMessages,
+		updateStaticData
+	} from '$lib/store';
 	import axios from 'axios';
 	import type { PageData } from './$types';
 	import {
@@ -22,9 +29,9 @@
 	import ListHeadFilters from '$compo/list-head-filters.svelte';
 	import { onMount } from 'svelte';
 	import Pagination from '$compo/pagination.svelte';
-	export let data: PageData
+	export let data: PageData;
 	let selectedItems: any = [];
-	let prev_cat: any = {};
+	let prev_cat: any = data.prev_cat;
 	let query: any = {};
 	const handleFiltersAndTypes = (e: any, type: string) => {
 		let value = typeof e === 'string' ? e : e.target.value;
@@ -66,7 +73,7 @@
 	};
 	let categories = JSON.parse(data.categories);
 	let list = categories;
-	$:data.categories, categories = JSON.parse(data.categories), list = categories;
+	$: data.categories, (categories = JSON.parse(data.categories)), (list = categories);
 
 	const handleEdit = (item: any) => {
 		modalUpdate({ visible: true, item, title: item.category, action: 'edit' });
@@ -107,6 +114,10 @@
 			]
 		});
 	};
+	// $: data.total,
+	// 	data.total && updateStaticData({ counter: { ...$static_data.counter, categories: data.total } }),
+	// 	console.log('updated', data.total);
+
 	onMount(() => {
 		let selectors: any = document.querySelectorAll('.selector-list');
 		let selectAllCheck: any = document.getElementById('select-all');
@@ -136,12 +147,12 @@
 			});
 		});
 	});
-	$:$modal.visible, console.log($modal.visible)
-	let type_list:any = []
+	$: $modal.visible, console.log($modal.visible);
+	let type_list: any = [];
 </script>
 
 {#if $modal.visible}
-	<Categories {type_list} on:newCatList={(event) => type_list = event.detail} />
+	<Categories {type_list} on:newCatList={(event) => (type_list = event.detail)} />
 {/if}
 
 <div transition:fade|global>
@@ -162,6 +173,7 @@
 			</div>
 		</div>
 		<ListHeadFilters
+			filters={data.filters}
 			{prev_cat}
 			{selectedItems}
 			{handleFilteredSearch}
@@ -300,7 +312,7 @@
 				</tfoot>
 			</table>
 		</div>
-		<Pagination renderFor={`/categories/`} counter_model={`categories`} pageNo={data.pageNo} />
+		<Pagination __count__={data.total} renderFor={`/categories/`} pageNo={data.pageNo} />
 	</div>
 </div>
 

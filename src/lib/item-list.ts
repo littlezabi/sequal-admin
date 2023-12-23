@@ -30,16 +30,8 @@ export const getCategories = async (
 ) => {
 	let match: any = false;
 	if (filter) match = { [filter[0]]: filter[1] };
-	if (category) {
-		try {
-			category = new mongoose.Types.ObjectId(category);
-		} catch (e) {
-			category = false;
-		}
-		match = match ? { $and: [{ category }, { ...match }] } : { category };
-	}
 	if (ctype) {
-		match = match ? { $and: [{ type: ctype }, { ...match }] } : { type: ctype };
+		match = match ? { $and: [{ type: new mongoose.Types.ObjectId(ctype)}, { ...match }] } : { type: new mongoose.Types.ObjectId(ctype)};
 	}
 	let pipleline: any = [
 		{ $match: match ? match : {} },
@@ -110,10 +102,10 @@ export const getProduct = async (_id: string) => {
 export const productList = async (
 	startIndex: number,
 	limit: number,
-	ctype: string,
 	category: any,
 	filter: any,
-	sort: string[]
+	sort: string[],
+	_:any
 ) => {
 	let match: any = false;
 	if (filter) match = { [filter[0]]: filter[1] };
@@ -124,9 +116,6 @@ export const productList = async (
 			category = false;
 		}
 		match = match ? { $and: [{ category }, { ...match }] } : { category };
-	}
-	if (ctype) {
-		match = match ? { $and: [{ 'cat.type': ctype }, { ...match }] } : { 'cat.type': ctype };
 	}
 	let pipleline: any = [
 		{

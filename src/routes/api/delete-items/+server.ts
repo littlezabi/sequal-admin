@@ -8,7 +8,7 @@ export const POST = async ({ request, cookies }: any) => {
 	const body = await request.json();
 	let authenticated = await authenticateAdmin(cookies.get('admin'));
 	if (!authenticated) {
-		cookies.delete('admin');
+		/* @migration task: add path argument */ cookies.delete('admin');
 		return new Response(
 			JSON.stringify({
 				message: 'Admin Authentication Failed!',

@@ -43,7 +43,53 @@ export const getCatsAndTypes = async (params: any) => {
 	params = reGenObjFromURLParams(params);
 	if (params.getCats) {
 		if (typeof params.getTypes === 'string') {
-			res.cats = await Categories.find({ type: new mongoose.Types.ObjectId(params.getTypes) });
+			res.cats = await Categories.find(
+				{ type: new mongoose.Types.ObjectId(params.getTypes) },
+				params.options.getCatsFieldOnly ? params.options.getCatsFieldOnly : {}
+			);
+		} else {
+			let pipleline: any = [
+				{
+					$lookup: {
+						from: 'category_types',
+						localField: 'type',
+						foreignField: '_id',
+						as: 'cat_type'
+					}
+				},
+				{
+					$unwind: {
+						path: '$cat_type',
+						preserveNullAndEmptyArrays: true
+					}
+				},
+				{
+					$facet: {
+						results: [
+							{
+								$project: {
+									...params.options.getCatsFieldOnly ? params.options.getCatsFieldOnly : {},
+									'cat_type.title': 1,
+									'cat_type._id': 1
+								}
+							}
+						]
+					}
+				}
+			];
+			const list = await Categories.aggregate(pipleline).exec();
+			// let c = list[0].results.map((e: any, i: number) => {
+			// 	let x = {
+			// 		...e,
+			// 		type_id: e.cat_type._id,
+			// 		type_title: e.cat_type.title
+			// 	};
+			// 	delete x.cat_type;
+			// 	return x;
+			// });
+
+			// console.log(c);
+			res.cats = list[0].results
 		}
 	}
 	if (params.getTypes === true) {
